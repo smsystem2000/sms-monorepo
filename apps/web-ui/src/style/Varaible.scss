@@ -1,0 +1,196 @@
+// variables.scss
+
+// Color System
+$primary-color: #1976d2;
+$primary-light: #42a5f5;
+$primary-dark: #1565c0;
+
+$secondary-color: #9c27b0;
+$secondary-light: #ba68c8;
+$secondary-dark: #7b1fa2;
+
+$success-color: #2e7d32;
+$success-light: #4caf50;
+$success-dark: #1b5e20;
+
+$error-color: #d32f2f;
+$error-light: #ef5350;
+$error-dark: #c62828;
+
+$warning-color: #ed6c02;
+$warning-light: #ff9800;
+$warning-dark: #e65100;
+
+$info-color: #0288d1;
+$info-light: #03a9f4;
+$info-dark: #01579b;
+
+// Neutral Colors
+$background-color: #f5f5f5;
+$surface-color: #ffffff;
+$text-primary: rgba(0, 0, 0, 0.87);
+$text-secondary: rgba(0, 0, 0, 0.6);
+$text-disabled: rgba(0, 0, 0, 0.38);
+
+// Border Colors
+$border-color: rgba(0, 0, 0, 0.12);
+$border-light: rgba(0, 0, 0, 0.08);
+
+// Shadow Colors
+$shadow-color: rgba(0, 0, 0, 0.1);
+$shadow-dark: rgba(0, 0, 0, 0.2);
+
+// Gradients
+$gradient-primary: linear-gradient(45deg, $primary-color, $primary-light);
+$gradient-secondary: linear-gradient(45deg, $secondary-color, $secondary-light);
+
+// Component Colors
+$card-background: $surface-color;
+$input-background: rgba(0, 0, 0, 0.04);
+$hover-overlay: rgba(0, 0, 0, 0.04);
+$focus-overlay: rgba(0, 0, 0, 0.08);
+
+// Spacing System
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;
+$spacing-xxl: 48px;
+
+// Border Radius
+$border-radius-sm: 4px;
+$border-radius-md: 8px;
+$border-radius-lg: 12px;
+$border-radius-xl: 16px;
+$border-radius-round: 50%;
+
+// Typography
+$font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+$font-size-xs: 12px;
+$font-size-sm: 14px;
+$font-size-md: 16px;
+$font-size-lg: 18px;
+$font-size-xl: 24px;
+$font-size-xxl: 32px;
+
+// Z-index Layers
+$z-index-modal: 1300;
+$z-index-drawer: 1200;
+$z-index-appbar: 1100;
+$z-index-tooltip: 1500;
+
+// CSS Custom Properties (for backward compatibility)
+:root {
+  // Primary colors
+  --primary-color: #{$primary-color};
+  --primary-light: #{$primary-light};
+  --primary-dark: #{$primary-dark};
+  
+  // Secondary colors
+  --secondary-color: #{$secondary-color};
+  --secondary-light: #{$secondary-light};
+  --secondary-dark: #{$secondary-dark};
+  
+  // Success colors
+  --success-color: #{$success-color};
+  --success-light: #{$success-light};
+  --success-dark: #{$success-dark};
+  
+  // Error colors
+  --error-color: #{$error-color};
+  --error-light: #{$error-light};
+  --error-dark: #{$error-dark};
+  
+  // Warning colors
+  --warning-color: #{$warning-color};
+  --warning-light: #{$warning-light};
+  --warning-dark: #{$warning-dark};
+  
+  // Info colors
+  --info-color: #{$info-color};
+  --info-light: #{$info-light};
+  --info-dark: #{$info-dark};
+  
+  // Neutral colors
+  --background-color: #{$background-color};
+  --surface-color: #{$surface-color};
+  --text-primary: #{$text-primary};
+  --text-secondary: #{$text-secondary};
+  --text-disabled: #{$text-disabled};
+  
+  // Border colors
+  --border-color: #{$border-color};
+  --border-light: #{$border-light};
+  
+  // Shadow colors
+  --shadow-color: #{$shadow-color};
+  --shadow-dark: #{$shadow-dark};
+  
+  // Gradients
+  --gradient-primary: #{$gradient-primary};
+  --gradient-secondary: #{$gradient-secondary};
+  
+  // Component colors
+  --card-background: var(--surface-color);
+  --input-background: #{rgba(0, 0, 0, 0.04)};
+  --hover-overlay: #{rgba(0, 0, 0, 0.04)};
+  --focus-overlay: #{rgba(0, 0, 0, 0.08)};
+  
+  // Spacing
+  --spacing-xs: #{$spacing-xs};
+  --spacing-sm: #{$spacing-sm};
+  --spacing-md: #{$spacing-md};
+  --spacing-lg: #{$spacing-lg};
+  --spacing-xl: #{$spacing-xl};
+  --spacing-xxl: #{$spacing-xxl};
+  
+  // Border radius
+  --border-radius-sm: #{$border-radius-sm};
+  --border-radius-md: #{$border-radius-md};
+  --border-radius-lg: #{$border-radius-lg};
+  --border-radius-xl: #{$border-radius-xl};
+  --border-radius-round: #{$border-radius-round};
+  
+  // Typography
+  --font-family: #{$font-family};
+  --font-size-xs: #{$font-size-xs};
+  --font-size-sm: #{$font-size-sm};
+  --font-size-md: #{$font-size-md};
+  --font-size-lg: #{$font-size-lg};
+  --font-size-xl: #{$font-size-xl};
+  --font-size-xxl: #{$font-size-xxl};
+  
+  // Z-index layers
+  --z-index-modal: #{$z-index-modal};
+  --z-index-drawer: #{$z-index-drawer};
+  --z-index-appbar: #{$z-index-appbar};
+  --z-index-tooltip: #{$z-index-tooltip};
+}
+
+// Export SCSS variables for use in other SCSS files
+:export {
+  primaryColor: $primary-color;
+  primaryLight: $primary-light;
+  primaryDark: $primary-dark;
+  
+  secondaryColor: $secondary-color;
+  secondaryLight: $secondary-light;
+  secondaryDark: $secondary-dark;
+  
+  successColor: $success-color;
+  successLight: $success-light;
+  successDark: $success-dark;
+  
+  errorColor: $error-color;
+  errorLight: $error-light;
+  errorDark: $error-dark;
+  
+  warningColor: $warning-color;
+  warningLight: $warning-light;
+  warningDark: $warning-dark;
+  
+  infoColor: $info-color;
+  infoLight: $info-light;
+  infoDark: $info-dark;
+}

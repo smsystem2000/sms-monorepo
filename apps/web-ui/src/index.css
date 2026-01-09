@@ -1,0 +1,102 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol" !important;
+}
+
+::-webkit-scrollbar {
+    display: none;
+}
+
+/* Responsive Global Styles */
+html {
+    font-size: 16px;
+}
+
+/* Tablet */
+@media screen and (max-width: 900px) {
+    html {
+        font-size: 15px;
+    }
+}
+
+/* Mobile */
+@media screen and (max-width: 600px) {
+    html {
+        font-size: 14px;
+    }
+
+    /* Make tables scrollable on mobile */
+    .MuiTableContainer-root {
+        max-width: 100%;
+        overflow-x: auto;
+    }
+
+    /* Smaller buttons on mobile */
+    .MuiButton-root {
+        font-size: 0.8rem;
+        padding: 6px 12px;
+    }
+
+    .MuiButton-root.MuiButton-sizeSmall {
+        font-size: 0.7rem;
+        padding: 4px 8px;
+    }
+
+    /* Smaller form controls */
+    .MuiFormControl-root {
+        min-width: 100px !important;
+    }
+
+    /* Compact toggle buttons on mobile */
+    .MuiToggleButton-root {
+        padding: 4px 8px;
+    }
+
+    /* Smaller chips */
+    .MuiChip-root.MuiChip-sizeSmall {
+        font-size: 0.7rem;
+    }
+}
+
+/* Extra small mobile */
+@media screen and (max-width: 400px) {
+    html {
+        font-size: 13px;
+    }
+}
+
+/* Main content area should respect sidebar */
+.main-content {
+    transition: margin-left 0.3s ease-in-out;
+}
+
+@media screen and (max-width: 900px) {
+    .main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+}
+
+/* Data table container responsive */
+.rdt_Table {
+    min-width: 100%;
+}
+
+.rdt_TableHeadRow,
+.rdt_TableRow {
+    min-width: 100%;
+}
+
+/* Ensure data table is scrollable on mobile */
+@media screen and (max-width: 768px) {
+    .rdt_TableWrapper {
+        overflow-x: auto;
+    }
+
+    .rdt_TableCell,
+    .rdt_TableHead {
+        font-size: 0.8rem !important;
+    }
+}

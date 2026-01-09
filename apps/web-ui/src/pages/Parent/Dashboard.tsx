@@ -1,4 +1,3 @@
-import React from 'react';
 import { Box, Typography, Card, CardContent, Grid } from '@mui/material';
 import TokenService from '../../queries/token/tokenService';
 
@@ -15,7 +14,7 @@ const ParentDashboard = () => {
             </Typography>
 
             <Grid container spacing={3}>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                     <Card>
                         <CardContent>
                             <Typography variant="h6">My Children</Typography>

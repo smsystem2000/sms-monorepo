@@ -6,12 +6,15 @@ WORKDIR /app
 COPY packages/shared ./packages/shared
 
 # Copy this service's package.json
-COPY apps/sm-platform-service/package.json ./
+COPY apps/sm-platform-service/package.json ./package.json
+
+# Remove @sms/shared from dependencies (it's not on npm, we'll copy it manually)
+RUN sed -i '/"@sms\/shared"/d' package.json
 
 # Install dependencies
 RUN npm install
 
-# Copy shared package into node_modules for the workspace link
+# Copy shared package into node_modules
 RUN mkdir -p node_modules/@sms && cp -r packages/shared node_modules/@sms/shared
 
 # Copy service source code

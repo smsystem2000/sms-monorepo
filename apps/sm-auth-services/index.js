@@ -11,7 +11,7 @@ const app = express();
 // CORS Configuration
 const allowedUrls = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(url => url.trim())
-    : ['http://localhost:3000', 'http://localhost:5173'];
+    : ['http://localhost:3000', 'http://localhost:5173', "https://sms-web-ui.vercel.app"];
 
 const corsOptions = {
     origin: (origin, callback) => {
@@ -36,7 +36,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/auth/:schoolId/dashboard',dashboardRoutes);
+app.use('/api/auth/:schoolId/dashboard', dashboardRoutes);
 
 // Health check endpoint
 app.get('/health', (_req, res) => {

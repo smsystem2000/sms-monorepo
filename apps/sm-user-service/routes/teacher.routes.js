@@ -8,8 +8,7 @@ const {
   updateTeacherById,
   deleteTeacherById,
 } = require("../controllers/teacher.controller");
-const Authenticated = require("../middlewares/auth");
-const authorizeRoles = require("../middlewares/authorizeRole");
+const { Authenticated, authorizeRoles } = require("@sms/shared/middlewares");
 const { getMenus } = require("../controllers/dashboard.controller");
 
 // All routes require authentication and appropriate role
@@ -44,6 +43,6 @@ router.delete(
 );
 
 
-router.get("/menus/:role",getMenus);
+router.get("/menus/:role", getMenus);
 
 module.exports = router;

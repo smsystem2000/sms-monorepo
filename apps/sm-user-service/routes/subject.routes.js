@@ -8,8 +8,7 @@ const {
     updateSubjectById,
     deleteSubjectById,
 } = require("../controllers/subject.controller");
-const Authenticated = require("../middlewares/auth");
-const authorizeRoles = require("../middlewares/authorizeRole");
+const { Authenticated, authorizeRoles } = require("@sms/shared/middlewares");
 
 // All routes require authentication
 

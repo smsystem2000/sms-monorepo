@@ -2,7 +2,13 @@
     "name": "@sms/shared",
     "version": "1.0.0",
     "main": "models/index.js",
+    "exports": {
+        ".": "./models/index.js",
+        "./models": "./models/index.js",
+        "./middlewares": "./middlewares/index.js"
+    },
     "dependencies": {
+        "jsonwebtoken": "^9.0.3",
         "mongoose": "^9.1.1"
     }
 }

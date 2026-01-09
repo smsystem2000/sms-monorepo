@@ -11,8 +11,7 @@ const {
     removeSection,
     assignClassTeacher,
 } = require("../controllers/class.controller");
-const Authenticated = require("../middlewares/auth");
-const authorizeRoles = require("../middlewares/authorizeRole");
+const { Authenticated, authorizeRoles } = require("@sms/shared/middlewares");
 
 // All routes require authentication and sch_admin role
 

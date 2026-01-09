@@ -9,8 +9,7 @@ const teacherController = require("../controllers/teacher-attendance.controller"
 const reportsController = require("../controllers/attendance-reports.controller");
 
 // Middleware
-const Authenticated = require("../middlewares/auth");
-const authorizeRoles = require("../middlewares/authorizeRole");
+const { Authenticated, authorizeRoles } = require("@sms/shared/middlewares");
 
 // ==========================================
 // SIMPLE DAILY ATTENDANCE ROUTES

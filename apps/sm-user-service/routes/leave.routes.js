@@ -10,7 +10,7 @@ const {
     getLeaveStats,
     getStudentLeavesForTeacher,
 } = require("../controllers/leave.controller");
-const { checkAuth, checkRole } = require("../middlewares/auth.middleware");
+const { checkAuth, checkRole } = require("@sms/shared/middlewares");
 
 // All routes require authentication
 router.use(checkAuth);

@@ -2,8 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const { login, verifyToken, createAdmin } = require("../controllers/auth.controller");
-const Authenticated = require("../middlewares/auth");
-const authorizeRoles = require("../middlewares/authorizeRole");
+const { Authenticated, authorizeRoles } = require("@sms/shared/middlewares");
 
 // Public routes (no authentication required)
 router.post("/login", login); // Unified login for all user types

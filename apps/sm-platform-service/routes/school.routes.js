@@ -7,8 +7,7 @@ const {
     getAllSchools,
     updateSchoolById,
 } = require("../controllers/school.controller");
-const Authenticated = require("../middlewares/auth");
-const authorizeRoles = require("../middlewares/authorizeRole");
+const { Authenticated, authorizeRoles } = require("@sms/shared/middlewares");
 
 // Apply authentication and authorization to all routes
 router.use(Authenticated);

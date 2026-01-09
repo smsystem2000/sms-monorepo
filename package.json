@@ -16,11 +16,7 @@
         "nodemon": "^3.1.11",
         "turbo": "^2.3.3"
     },
-    "overrides": {
-        "rollup": {
-            "optionalDependencies": {
-                "@rollup/rollup-linux-x64-gnu": "*"
-            }
-        }
+    "optionalDependencies": {
+        "@rollup/rollup-linux-x64-gnu": "^4.24.0"
     }
 }

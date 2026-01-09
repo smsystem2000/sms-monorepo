@@ -2,25 +2,30 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy package file only (no lock file required)
-COPY package.json ./
+# Copy shared package first
+COPY packages/shared ./packages/shared
 
-# Install all dependencies
+# Copy this service's package.json
+COPY apps/sm-user-service/package.json ./
+
+# Install dependencies
 RUN npm install
 
-# Copy source code
-COPY . .
+# Copy shared package into node_modules for the workspace link
+RUN mkdir -p node_modules/@sms && cp -r packages/shared node_modules/@sms/shared
+
+# Copy service source code
+COPY apps/sm-user-service/ ./
 
 # Stage 2: Production
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-# Copy node_modules and source from builder
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app .
+# Copy from builder
+COPY --from=builder /app ./
 
 # Expose port
-EXPOSE 5000
+EXPOSE 5003
 
 # Start the server
 CMD ["node", "index.js"]

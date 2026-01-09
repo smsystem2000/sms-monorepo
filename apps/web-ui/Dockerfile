@@ -2,14 +2,14 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy package file only (no lock file required)
-COPY package.json ./
+# Copy only the web-ui package.json first for caching
+COPY apps/web-ui/package.json ./
 
-# Install all dependencies
+# Install all dependencies (includes TypeScript, Vite, etc.)
 RUN npm install
 
-# Copy source code
-COPY . .
+# Copy web-ui source code
+COPY apps/web-ui/ ./
 
 # Build the Vite application
 RUN npm run build
@@ -20,7 +20,7 @@ FROM nginx:alpine AS runner
 # Copy built assets from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy custom nginx config (optional - for SPA routing)
+# Copy custom nginx config for SPA routing
 RUN echo 'server { \
     listen 80; \
     server_name localhost; \

@@ -8,8 +8,8 @@ COPY packages/shared ./packages/shared
 # Copy this service's package.json
 COPY apps/sm-platform-service/package.json ./package.json
 
-# Remove @sms/shared from dependencies (it's not on npm, we'll copy it manually)
-RUN sed -i '/"@sms\/shared"/d' package.json
+# Remove @sms/shared from dependencies using Node.js (proper JSON handling)
+RUN node -e "const p=require('./package.json'); delete p.dependencies['@sms/shared']; require('fs').writeFileSync('./package.json', JSON.stringify(p, null, 2));"
 
 # Install dependencies
 RUN npm install

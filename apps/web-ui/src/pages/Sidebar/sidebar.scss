@@ -14,7 +14,6 @@
 
 .sidebar.closed {
   transform: translateX(-100%);
-  visibility: hidden;
   pointer-events: none;
 }
 
@@ -82,7 +81,6 @@
 
   .sidebar.closed {
     transform: translateX(-100%);
-    visibility: hidden;
     pointer-events: none;
   }
 }

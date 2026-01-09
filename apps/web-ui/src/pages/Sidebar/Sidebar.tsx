@@ -83,7 +83,7 @@ const Sidebar = ({ isOpen, onClose, role, onLogout }: SidebarProps) => {
         animate={{ width: isOpen ? 250 : 0 }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
         style={{
-          zIndex: 100,
+          zIndex: 9999,
           background: '#1e293b',
           boxShadow: isOpen ? '4px 0 20px rgba(30, 41, 59, 0.3)' : 'none',
           overflow: 'hidden',

@@ -1,10 +1,16 @@
-name: Docker Build Check
+name: Platform Service - Docker Build Check
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
+    paths:
+      - 'apps/sm-platform-service/**'
+      - 'packages/shared/**'
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
+    paths:
+      - 'apps/sm-platform-service/**'
+      - 'packages/shared/**'
 
 jobs:
   docker-build:
@@ -21,10 +27,11 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: apps/sm-platform-service/Dockerfile
           push: false
-          tags: sm-be:${{ github.sha }}
+          tags: sm-platform-service:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
       
       - name: Build status
-        run: echo "✅ Docker image built successfully!"
+        run: echo "✅ Platform Service Docker image built successfully!"

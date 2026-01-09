@@ -1,10 +1,14 @@
-name: Docker Build Check
+name: Web UI - Docker Build Check
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
+    paths:
+      - 'apps/web-ui/**'
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
+    paths:
+      - 'apps/web-ui/**'
 
 jobs:
   docker-build:
@@ -21,10 +25,11 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: apps/web-ui/Dockerfile
           push: false
-          tags: founder-os-fe:${{ github.sha }}
+          tags: web-ui:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
       
       - name: Build status
-        run: echo "✅ Docker image built successfully!"
+        run: echo "✅ Web UI Docker image built successfully!"

@@ -12,7 +12,7 @@ const app = express();
 // CORS Configuration
 const allowedUrls = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(url => url.trim())
-    : ['http://localhost:3000', 'http://localhost:5173'];
+    : ['http://localhost:3000', 'http://localhost:5173', "https://sms-web-ui.vercel.app"];
 
 const corsOptions = {
     origin: (origin, callback) => {

@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 
 /**
  * Middleware to check if user is authenticated
+ * Verifies JWT token from Authorization header and attaches decoded user to req.user
  */
 const checkAuth = (req, res, next) => {
     const auth = req.headers["authorization"] || req.headers["Authorization"];
@@ -27,20 +28,7 @@ const checkAuth = (req, res, next) => {
     }
 };
 
-/**
- * Middleware to check if user has required role(s)
- * @param {string[]} allowedRoles - Array of allowed roles
- */
-const checkRole = (allowedRoles) => {
-    return (req, res, next) => {
-        // Flatten the array if an array was passed as first argument
-        const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
+// Alias for backward compatibility
+const Authenticated = checkAuth;
 
-        if (!req.user || !roles.includes(req.user.role)) {
-            return res.status(403).json({ message: "Access denied. Insufficient permissions." });
-        }
-        next();
-    };
-};
-
-module.exports = { checkAuth, checkRole };
+module.exports = { checkAuth, Authenticated };

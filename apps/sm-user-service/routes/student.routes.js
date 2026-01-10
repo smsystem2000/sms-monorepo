@@ -9,8 +9,7 @@ const {
     deleteStudentById,
     searchStudents,
 } = require("../controllers/student.controller");
-const Authenticated = require("../middlewares/auth");
-const authorizeRoles = require("../middlewares/authorizeRole");
+const { Authenticated, authorizeRoles } = require("@sms/shared/middlewares");
 
 // All routes require authentication and appropriate role
 // GET /api/school/:schoolId/students/search?query=xxx - Search students

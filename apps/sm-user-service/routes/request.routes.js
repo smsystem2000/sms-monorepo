@@ -7,8 +7,7 @@ const {
     getAllRequests,
     updateRequestStatus,
 } = require("../controllers/request.controller");
-const Authenticated = require("../middlewares/auth");
-const authorizeRoles = require("../middlewares/authorizeRole");
+const { Authenticated, authorizeRoles } = require("@sms/shared/middlewares");
 
 // POST /api/school/:schoolId/requests - Create a new request
 router.post(

@@ -23,7 +23,7 @@ import SchoolAdminSubjects from "../pages/SchoolAdmin/Subjects";
 import SchoolAdminAttendance from "../pages/SchoolAdmin/Attendance";
 import SchoolAdminLeaveRequests from "../pages/SchoolAdmin/Leave/Requests";
 import SchoolLocation from "../pages/SchoolAdmin/SchoolLocation";
-import { TimetableConfig, TimetableMaster } from "../pages/SchoolAdmin/Timetable";
+import { TimetableConfig, TimetableMaster, ConflictManagement, SubstituteManagement } from "../pages/SchoolAdmin/Timetable";
 
 // Teacher Pages
 import TeacherDashboard from "../pages/Teacher/Dashboard";
@@ -85,6 +85,8 @@ const MainRouters = () => {
         <Route path="/school-admin/leave" element={<SchoolAdminLeaveRequests />} />
         <Route path="/school-admin/timetable/config" element={<TimetableConfig />} />
         <Route path="/school-admin/timetable/master" element={<TimetableMaster />} />
+        <Route path="/school-admin/timetable/conflicts" element={<ConflictManagement />} />
+        <Route path="/school-admin/timetable/substitutes" element={<SubstituteManagement />} />
         <Route path="/school-admin/location" element={<SchoolLocation />} />
         <Route path="/school-admin/profile" element={<SchoolAdminProfile />} />
       </Route>

@@ -11,17 +11,22 @@ import {
     Card,
     CardContent,
     Divider,
+    Button,
 } from '@mui/material';
 import {
     TableChart as TableIcon,
     List as ListIcon,
     Today as TodayIcon,
+    PictureAsPdf as PdfIcon,
+    EventAvailable as FreePeriodIcon,
 } from '@mui/icons-material';
-import { useGetTeacherTimetable } from '../../../queries/Timetable';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { useGetTeacherTimetable, useGetTeacherFreePeriods } from '../../../queries/Timetable';
 import TokenService from '../../../queries/token/tokenService';
 import type { TimetableEntry } from '../../../types/timetable.types';
 
-type ViewMode = 'table' | 'list';
+type ViewMode = 'table' | 'list' | 'free';
 
 const MyTimetable = () => {
     const schoolId = TokenService.getSchoolId() || '';
@@ -29,9 +34,11 @@ const MyTimetable = () => {
     const [viewMode, setViewMode] = useState<ViewMode>('table');
 
     const { data: timetableData, isLoading, error } = useGetTeacherTimetable(schoolId, teacherId);
+    const { data: freePeriodsData } = useGetTeacherFreePeriods(schoolId, teacherId);
 
     const config = timetableData?.data?.config;
     const entries = timetableData?.data?.entries || [];
+    const freePeriods = freePeriodsData?.data || { teacherId: '', freePeriods: {} as Record<string, any[]> };
 
     // Get regular periods only
     const regularPeriods = useMemo(() => {
@@ -66,6 +73,85 @@ const MyTimetable = () => {
         return `hsl(${hue}, 70%, 85%)`;
     };
 
+    // Export to PDF functionality
+    const handleExportPdf = () => {
+        if (!config) return;
+
+        const doc = new jsPDF({
+            orientation: 'landscape',
+            unit: 'mm',
+            format: 'a4',
+        });
+
+        // Title
+        doc.setFontSize(18);
+        doc.setTextColor(25, 118, 210); // Primary blue color
+        doc.text('My Timetable', 14, 20);
+
+        // Date
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
+
+        // Prepare table data
+        const headers = ['Period', ...config.workingDays.map(day => day.charAt(0).toUpperCase() + day.slice(1))];
+
+        const rows = regularPeriods.map((period) => {
+            const row = [`${period.name}\n(${period.startTime} - ${period.endTime})`];
+            config.workingDays.forEach((day) => {
+                const entry = entryMap[`${day}-${period.periodNumber}`];
+                if (entry) {
+                    row.push(`${entry.subject?.name || entry.subjectId}\n${entry.class?.name || ''} ${entry.class?.section || ''}`);
+                } else {
+                    row.push('-');
+                }
+            });
+            return row;
+        });
+
+        // Generate table
+        autoTable(doc, {
+            head: [headers],
+            body: rows,
+            startY: 35,
+            theme: 'grid',
+            headStyles: {
+                fillColor: [25, 118, 210],
+                textColor: 255,
+                fontStyle: 'bold',
+                halign: 'center',
+            },
+            bodyStyles: {
+                halign: 'center',
+                valign: 'middle',
+            },
+            columnStyles: {
+                0: { fontStyle: 'bold', fillColor: [245, 245, 245] },
+            },
+            styles: {
+                fontSize: 9,
+                cellPadding: 3,
+            },
+        });
+
+        // Footer
+        const pageCount = doc.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            doc.text(
+                `Page ${i} of ${pageCount}`,
+                doc.internal.pageSize.getWidth() / 2,
+                doc.internal.pageSize.getHeight() - 10,
+                { align: 'center' }
+            );
+        }
+
+        // Save
+        doc.save('my-timetable.pdf');
+    };
+
     if (isLoading) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
@@ -95,15 +181,26 @@ const MyTimetable = () => {
             {/* Header */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
                 <Typography variant="h5" fontWeight={600}>My Timetable</Typography>
-                <ToggleButtonGroup
-                    value={viewMode}
-                    exclusive
-                    onChange={(_, v) => v && setViewMode(v)}
-                    size="small"
-                >
-                    <ToggleButton value="table"><TableIcon /></ToggleButton>
-                    <ToggleButton value="list"><ListIcon /></ToggleButton>
-                </ToggleButtonGroup>
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <Button
+                        variant="outlined"
+                        startIcon={<PdfIcon />}
+                        onClick={handleExportPdf}
+                        size="small"
+                    >
+                        Export PDF
+                    </Button>
+                    <ToggleButtonGroup
+                        value={viewMode}
+                        exclusive
+                        onChange={(_, v) => v && setViewMode(v)}
+                        size="small"
+                    >
+                        <ToggleButton value="table"><TableIcon /></ToggleButton>
+                        <ToggleButton value="list"><ListIcon /></ToggleButton>
+                        <ToggleButton value="free"><FreePeriodIcon /></ToggleButton>
+                    </ToggleButtonGroup>
+                </Box>
             </Box>
 
             {/* Today's Schedule Card */}
@@ -208,7 +305,7 @@ const MyTimetable = () => {
                             </tbody>
                         </Box>
                     </Box>
-                ) : (
+                ) : viewMode === 'list' ? (
                     /* List View */
                     <Box>
                         {config.workingDays.map((day) => (
@@ -257,6 +354,80 @@ const MyTimetable = () => {
                             </Box>
                         ))}
                     </Box>
+                ) : (
+                    /* Free Periods View */
+                    <Box>
+                        <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <FreePeriodIcon color="success" />
+                            My Free Periods
+                        </Typography>
+
+                        {/* Today's Free Periods Highlight */}
+                        {freePeriods.freePeriods?.[todayDayName] && (
+                            <Card sx={{ mb: 3, bgcolor: 'success.light', color: 'success.contrastText' }}>
+                                <CardContent>
+                                    <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
+                                        Today's Free Periods ({todayDayName.charAt(0).toUpperCase() + todayDayName.slice(1)})
+                                    </Typography>
+                                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                        {freePeriods.freePeriods[todayDayName]?.map((fp: any) => (
+                                            <Chip
+                                                key={fp.periodNumber}
+                                                label={`${fp.periodName || 'Period ' + fp.periodNumber} (${fp.startTime} - ${fp.endTime})`}
+                                                sx={{ bgcolor: 'white', color: 'success.dark' }}
+                                            />
+                                        ))}
+                                    </Box>
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {/* All Days Free Periods */}
+                        {config.workingDays.map((day) => {
+                            const dayFreePeriods = freePeriods.freePeriods?.[day] || [];
+                            return (
+                                <Box key={day} sx={{ mb: 2 }}>
+                                    <Typography
+                                        variant="subtitle1"
+                                        fontWeight={600}
+                                        sx={{
+                                            textTransform: 'capitalize',
+                                            color: day === todayDayName ? 'success.main' : 'text.primary',
+                                            mb: 1,
+                                        }}
+                                    >
+                                        {day} {day === todayDayName && '(Today)'}
+                                    </Typography>
+                                    {dayFreePeriods.length === 0 ? (
+                                        <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
+                                            No free periods
+                                        </Typography>
+                                    ) : (
+                                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', ml: 2 }}>
+                                            {dayFreePeriods.map((fp: any) => (
+                                                <Chip
+                                                    key={fp.periodNumber}
+                                                    label={`${fp.periodName || 'Period ' + fp.periodNumber} (${fp.startTime} - ${fp.endTime})`}
+                                                    color={day === todayDayName ? 'success' : 'default'}
+                                                    variant="outlined"
+                                                />
+                                            ))}
+                                        </Box>
+                                    )}
+                                    <Divider sx={{ mt: 2 }} />
+                                </Box>
+                            );
+                        })}
+
+                        {/* Summary */}
+                        <Box sx={{ mt: 3 }}>
+                            <Alert severity="info">
+                                <Typography variant="body2">
+                                    <strong>Total Free Periods:</strong> {Object.values(freePeriods.freePeriods || {}).flat().length} per week
+                                </Typography>
+                            </Alert>
+                        </Box>
+                    </Box>
                 )}
             </Paper>
 
@@ -264,9 +435,11 @@ const MyTimetable = () => {
             <Box sx={{ mt: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                 <Chip label={`Total Classes: ${entries.length}`} color="primary" variant="outlined" />
                 <Chip label={`Classes per Week: ${entries.length}`} color="secondary" variant="outlined" />
+                <Chip label={`Free Periods: ${Object.values(freePeriods.freePeriods || {}).flat().length}`} color="success" variant="outlined" />
             </Box>
         </Box>
     );
 };
 
 export default MyTimetable;
+

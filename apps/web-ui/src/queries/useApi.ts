@@ -50,8 +50,11 @@ const detectServiceFromPath = (path: string): ServiceType => {
 
 // Create axios instance with interceptor
 const createApiInstance = (baseURL: string): AxiosInstance => {
+    // Ensure baseURL doesn't end with slash to avoid double slashes when invalid paths are used
+    const normalizedBaseUrl = baseURL.endsWith("/") ? baseURL.slice(0, -1) : baseURL;
+
     const instance = axios.create({
-        baseURL,
+        baseURL: normalizedBaseUrl,
         headers: {
             "Content-Type": "application/json",
         },

@@ -59,22 +59,26 @@ export const SchoolAdminMenuItems: SideBarMenuItemType[] = [
     isExpandable: false,
   },
   {
-    name: "Teachers",
-    icon: <MuiIcons.Person />,
-    path: "/school-admin/teachers",
-    isExpandable: false,
-  },
-  {
-    name: "Students",
-    icon: <MuiIcons.Group />,
-    path: "/school-admin/students",
-    isExpandable: false,
-  },
-  {
-    name: "Parents",
+    name: "Users",
     icon: <MuiIcons.People />,
-    path: "/school-admin/parents",
-    isExpandable: false,
+    isExpandable: true,
+    subItems: [
+      {
+        name: "Teachers",
+        icon: <MuiIcons.Person />,
+        path: "/school-admin/teachers",
+      },
+      {
+        name: "Students",
+        icon: <MuiIcons.Group />,
+        path: "/school-admin/students",
+      },
+      {
+        name: "Parents",
+        icon: <MuiIcons.People />,
+        path: "/school-admin/parents",
+      },
+    ],
   },
   {
     name: "Requests",

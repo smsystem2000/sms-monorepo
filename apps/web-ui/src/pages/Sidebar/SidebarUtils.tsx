@@ -113,6 +113,16 @@ export const SchoolAdminMenuItems: SideBarMenuItemType[] = [
         icon: <MuiIcons.TableChart />,
         path: "/school-admin/timetable/master",
       },
+      {
+        name: "Conflicts",
+        icon: <MuiIcons.Warning />,
+        path: "/school-admin/timetable/conflicts",
+      },
+      {
+        name: "Substitutes",
+        icon: <MuiIcons.SwapHoriz />,
+        path: "/school-admin/timetable/substitutes",
+      },
     ],
   },
   {

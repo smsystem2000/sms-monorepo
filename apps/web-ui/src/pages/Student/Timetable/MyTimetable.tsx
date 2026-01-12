@@ -11,12 +11,16 @@ import {
     Card,
     CardContent,
     Divider,
+    Button,
 } from '@mui/material';
 import {
     TableChart as TableIcon,
     List as ListIcon,
     Today as TodayIcon,
+    PictureAsPdf as PdfIcon,
 } from '@mui/icons-material';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { useGetClassTimetable, useGetActiveConfig } from '../../../queries/Timetable';
 import TokenService from '../../../queries/token/tokenService';
 import type { TimetableEntry } from '../../../types/timetable.types';
@@ -71,6 +75,85 @@ const MyTimetable = () => {
         return `hsl(${hue}, 70%, 85%)`;
     };
 
+    // Export to PDF functionality
+    const handleExportPdf = () => {
+        if (!config) return;
+
+        const doc = new jsPDF({
+            orientation: 'landscape',
+            unit: 'mm',
+            format: 'a4',
+        });
+
+        // Title
+        doc.setFontSize(18);
+        doc.setTextColor(46, 125, 50); // Success green color
+        doc.text('My Class Timetable', 14, 20);
+
+        // Date
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
+
+        // Prepare table data
+        const headers = ['Period', ...config.workingDays.map(day => day.charAt(0).toUpperCase() + day.slice(1))];
+
+        const rows = regularPeriods.map((period) => {
+            const row = [`${period.name}\n(${period.startTime} - ${period.endTime})`];
+            config.workingDays.forEach((day) => {
+                const entry = entryMap[`${day}-${period.periodNumber}`];
+                if (entry) {
+                    row.push(`${entry.subject?.name || entry.subjectId}\n${entry.teacher?.name || 'TBA'}`);
+                } else {
+                    row.push('-');
+                }
+            });
+            return row;
+        });
+
+        // Generate table
+        autoTable(doc, {
+            head: [headers],
+            body: rows,
+            startY: 35,
+            theme: 'grid',
+            headStyles: {
+                fillColor: [46, 125, 50],
+                textColor: 255,
+                fontStyle: 'bold',
+                halign: 'center',
+            },
+            bodyStyles: {
+                halign: 'center',
+                valign: 'middle',
+            },
+            columnStyles: {
+                0: { fontStyle: 'bold', fillColor: [245, 245, 245] },
+            },
+            styles: {
+                fontSize: 9,
+                cellPadding: 3,
+            },
+        });
+
+        // Footer
+        const pageCount = doc.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            doc.text(
+                `Page ${i} of ${pageCount}`,
+                doc.internal.pageSize.getWidth() / 2,
+                doc.internal.pageSize.getHeight() - 10,
+                { align: 'center' }
+            );
+        }
+
+        // Save
+        doc.save('my-class-timetable.pdf');
+    };
+
     if (isLoading) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
@@ -108,15 +191,26 @@ const MyTimetable = () => {
             {/* Header */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
                 <Typography variant="h5" fontWeight={600}>My Class Timetable</Typography>
-                <ToggleButtonGroup
-                    value={viewMode}
-                    exclusive
-                    onChange={(_, v) => v && setViewMode(v)}
-                    size="small"
-                >
-                    <ToggleButton value="table"><TableIcon /></ToggleButton>
-                    <ToggleButton value="list"><ListIcon /></ToggleButton>
-                </ToggleButtonGroup>
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <Button
+                        variant="outlined"
+                        color="success"
+                        startIcon={<PdfIcon />}
+                        onClick={handleExportPdf}
+                        size="small"
+                    >
+                        Export PDF
+                    </Button>
+                    <ToggleButtonGroup
+                        value={viewMode}
+                        exclusive
+                        onChange={(_, v) => v && setViewMode(v)}
+                        size="small"
+                    >
+                        <ToggleButton value="table"><TableIcon /></ToggleButton>
+                        <ToggleButton value="list"><ListIcon /></ToggleButton>
+                    </ToggleButtonGroup>
+                </Box>
             </Box>
 
             {/* Today's Schedule Card */}
@@ -283,3 +377,4 @@ const MyTimetable = () => {
 };
 
 export default MyTimetable;
+

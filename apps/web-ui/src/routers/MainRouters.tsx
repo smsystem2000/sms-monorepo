@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import LoginPage from "../pages/LoginPage";
 import HomePage from "../pages/HomePage";
 import NotFoundPage from "../pages/NotFoundPage";
+import UnauthorizedPage from "../pages/UnauthorizedPage";
 import ProtectedRoute from "./RouterProtect";
 
 // Super Admin Pages
@@ -22,6 +23,7 @@ import SchoolAdminSubjects from "../pages/SchoolAdmin/Subjects";
 import SchoolAdminAttendance from "../pages/SchoolAdmin/Attendance";
 import SchoolAdminLeaveRequests from "../pages/SchoolAdmin/Leave/Requests";
 import SchoolLocation from "../pages/SchoolAdmin/SchoolLocation";
+import { TimetableConfig, TimetableMaster } from "../pages/SchoolAdmin/Timetable";
 
 // Teacher Pages
 import TeacherDashboard from "../pages/Teacher/Dashboard";
@@ -47,15 +49,20 @@ import StudentMyLeaves from "../pages/Student/Leave/MyLeaves";
 import TeacherApplyLeave from "../pages/Teacher/Leave/ApplyLeave";
 import TeacherMyLeaves from "../pages/Teacher/Leave/MyLeaves";
 import TeacherStudentLeaves from "../pages/Teacher/Leave/StudentLeaves";
+import { MyTimetable as TeacherTimetable } from "../pages/Teacher/Timetable";
 
 // Parent Pages
 import ParentDashboard from "../pages/Parent/Dashboard";
+
+// Student Timetable
+import { MyTimetable as StudentTimetable } from "../pages/Student/Timetable";
 
 const MainRouters = () => {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
       {/* Super Admin Routes */}
       <Route element={<ProtectedRoute allowedRoles={["super_admin"]} />}>
@@ -76,6 +83,8 @@ const MainRouters = () => {
         <Route path="/school-admin/requests" element={<Requests />} />
         <Route path="/school-admin/attendance" element={<SchoolAdminAttendance />} />
         <Route path="/school-admin/leave" element={<SchoolAdminLeaveRequests />} />
+        <Route path="/school-admin/timetable/config" element={<TimetableConfig />} />
+        <Route path="/school-admin/timetable/master" element={<TimetableMaster />} />
         <Route path="/school-admin/location" element={<SchoolLocation />} />
         <Route path="/school-admin/profile" element={<SchoolAdminProfile />} />
       </Route>
@@ -91,6 +100,7 @@ const MainRouters = () => {
         <Route path="/teacher/leave/apply" element={<TeacherApplyLeave />} />
         <Route path="/teacher/leave/my" element={<TeacherMyLeaves />} />
         <Route path="/teacher/leave/students" element={<TeacherStudentLeaves />} />
+        <Route path="/teacher/timetable" element={<TeacherTimetable />} />
         <Route path="/teacher/profile" element={<TeacherProfile />} />
       </Route>
 
@@ -104,6 +114,7 @@ const MainRouters = () => {
         <Route path="/student/my-requests" element={<StudentMyRequests />} />
         <Route path="/student/leave/apply" element={<StudentApplyLeave />} />
         <Route path="/student/leave/my" element={<StudentMyLeaves />} />
+        <Route path="/student/timetable" element={<StudentTimetable />} />
         <Route path="/student/profile" element={<StudentProfile />} />
       </Route>
 

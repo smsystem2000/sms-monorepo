@@ -59,22 +59,26 @@ export const SchoolAdminMenuItems: SideBarMenuItemType[] = [
     isExpandable: false,
   },
   {
-    name: "Teachers",
-    icon: <MuiIcons.Person />,
-    path: "/school-admin/teachers",
-    isExpandable: false,
-  },
-  {
-    name: "Students",
-    icon: <MuiIcons.Group />,
-    path: "/school-admin/students",
-    isExpandable: false,
-  },
-  {
-    name: "Parents",
+    name: "Users",
     icon: <MuiIcons.People />,
-    path: "/school-admin/parents",
-    isExpandable: false,
+    isExpandable: true,
+    subItems: [
+      {
+        name: "Teachers",
+        icon: <MuiIcons.Person />,
+        path: "/school-admin/teachers",
+      },
+      {
+        name: "Students",
+        icon: <MuiIcons.Group />,
+        path: "/school-admin/students",
+      },
+      {
+        name: "Parents",
+        icon: <MuiIcons.People />,
+        path: "/school-admin/parents",
+      },
+    ],
   },
   {
     name: "Requests",
@@ -93,6 +97,23 @@ export const SchoolAdminMenuItems: SideBarMenuItemType[] = [
     icon: <MuiIcons.EventNote />,
     path: "/school-admin/leave",
     isExpandable: false,
+  },
+  {
+    name: "Timetable",
+    icon: <MuiIcons.Schedule />,
+    isExpandable: true,
+    subItems: [
+      {
+        name: "Configuration",
+        icon: <MuiIcons.Settings />,
+        path: "/school-admin/timetable/config",
+      },
+      {
+        name: "Master Timetable",
+        icon: <MuiIcons.TableChart />,
+        path: "/school-admin/timetable/master",
+      },
+    ],
   },
   {
     name: "School Location",
@@ -169,6 +190,12 @@ export const TeachersMenuItems: SideBarMenuItemType[] = [
     ],
   },
   {
+    name: "My Timetable",
+    icon: <MuiIcons.Schedule />,
+    path: "/teacher/timetable",
+    isExpandable: false,
+  },
+  {
     name: "Profile",
     icon: <MuiIcons.AccountCircle />,
     path: "/teacher/profile",
@@ -224,6 +251,12 @@ export const StudentsMenuItems: SideBarMenuItemType[] = [
         path: "/student/leave/my",
       },
     ],
+  },
+  {
+    name: "My Timetable",
+    icon: <MuiIcons.Schedule />,
+    path: "/student/timetable",
+    isExpandable: false,
   },
   {
     name: "Profile",

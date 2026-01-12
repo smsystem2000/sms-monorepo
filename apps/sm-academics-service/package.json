@@ -1,0 +1,23 @@
+{
+    "name": "sm-academics-service",
+    "version": "1.0.0",
+    "description": "Academic service for timetable and schedule management",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "dev": "nodemon index.js"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "commonjs",
+    "dependencies": {
+        "cors": "^2.8.5",
+        "dotenv": "^17.2.3",
+        "express": "^5.2.1",
+        "jsonwebtoken": "^9.0.3",
+        "mongoose": "^9.1.1",
+        "pdfkit": "^0.15.0",
+        "@sms/shared": "*"
+    }
+}

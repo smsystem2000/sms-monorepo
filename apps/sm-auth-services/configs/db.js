@@ -80,8 +80,6 @@ const getSchoolDbConnection = (schoolDbName) => {
   // Cache the connection
   schoolDbConnections[schoolDbName] = schoolConnection;
 
-  console.log(`✅ Connected to school database: ${schoolDbName}`);
-
   return schoolConnection;
 };
 

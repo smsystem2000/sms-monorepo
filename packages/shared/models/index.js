@@ -16,4 +16,10 @@ module.exports = {
     RequestSchema: require('./request.model'),
     SubjectSchema: require('./subject.model'),
     TeacherAttendanceSchema: require('./teacher-attendance.model'),
+    // Timetable Management
+    TimetableConfigSchema: require('./timetable-config.model'),
+    TimetableEntrySchema: require('./timetable-entry.model'),
+    SubstituteAssignmentSchema: require('./substitute-assignment.model'),
+    RoomSchema: require('./room.model'),
+    PeriodSwapSchema: require('./period-swap.model'),
 };

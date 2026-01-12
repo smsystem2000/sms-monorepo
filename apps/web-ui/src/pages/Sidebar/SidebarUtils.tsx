@@ -95,6 +95,23 @@ export const SchoolAdminMenuItems: SideBarMenuItemType[] = [
     isExpandable: false,
   },
   {
+    name: "Timetable",
+    icon: <MuiIcons.Schedule />,
+    isExpandable: true,
+    subItems: [
+      {
+        name: "Configuration",
+        icon: <MuiIcons.Settings />,
+        path: "/school-admin/timetable/config",
+      },
+      {
+        name: "Master Timetable",
+        icon: <MuiIcons.TableChart />,
+        path: "/school-admin/timetable/master",
+      },
+    ],
+  },
+  {
     name: "School Location",
     icon: <MuiIcons.LocationOn />,
     path: "/school-admin/location",
@@ -169,6 +186,12 @@ export const TeachersMenuItems: SideBarMenuItemType[] = [
     ],
   },
   {
+    name: "My Timetable",
+    icon: <MuiIcons.Schedule />,
+    path: "/teacher/timetable",
+    isExpandable: false,
+  },
+  {
     name: "Profile",
     icon: <MuiIcons.AccountCircle />,
     path: "/teacher/profile",
@@ -224,6 +247,12 @@ export const StudentsMenuItems: SideBarMenuItemType[] = [
         path: "/student/leave/my",
       },
     ],
+  },
+  {
+    name: "My Timetable",
+    icon: <MuiIcons.Schedule />,
+    path: "/student/timetable",
+    isExpandable: false,
   },
   {
     name: "Profile",

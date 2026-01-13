@@ -56,6 +56,11 @@ import Schedule from "@mui/icons-material/Schedule";
 import Settings from "@mui/icons-material/Settings";
 import TableChart from "@mui/icons-material/TableChart";
 import Warning from "@mui/icons-material/Warning";
+import ArrowBack from "@mui/icons-material/ArrowBack";
+import CardMembership from "@mui/icons-material/CardMembership";
+import Delete from "@mui/icons-material/Delete";
+import Save from "@mui/icons-material/Save";
+import Edit from "@mui/icons-material/Edit";
 
 export const MuiIcons = {
   Dashboard,
@@ -116,5 +121,10 @@ export const MuiIcons = {
   Schedule,
   Settings,
   TableChart,
+  ArrowBack,
+  CardMembership,
+  Delete,
+  Save,
+  Edit,
   Warning,
 };

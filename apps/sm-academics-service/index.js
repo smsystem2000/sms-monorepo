@@ -4,6 +4,7 @@ require('dotenv').config();
 
 const { connectDB } = require('./configs/db');
 const timetableRoutes = require('./routes/timetable.routes');
+const examRoutes = require('./routes/exam.routes');
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Timetable routes (school-specific)
 app.use('/api/academics/school/:schoolId', timetableRoutes);
+app.use('/api/academics/school/:schoolId', examRoutes);
 
 // Health check endpoint
 app.get('/health', (_req, res) => {

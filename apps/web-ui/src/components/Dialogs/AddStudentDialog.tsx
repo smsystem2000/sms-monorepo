@@ -111,14 +111,25 @@ const StudentDialog: React.FC<StudentDialogProps> = ({ open, onClose, schoolId, 
                 section: editData.section || '',
                 rollNumber: editData.rollNumber || '',
                 gender: editData.gender,
-                dateOfBirth: editData.dateOfBirth || '',
+                dateOfBirth: editData.dateOfBirth ? editData.dateOfBirth.split('T')[0] : '',
                 address: editData.address || '',
                 parentId: editData.parentId || '',
                 status: editData.status || 'active',
             });
             // Set placeholder parent for edit mode
             if (editData.parentId) {
-                setSelectedParent({ parentId: editData.parentId, firstName: '', lastName: '' } as Parent);
+                // Use parentName from editData if available, otherwise just ID
+                const nameParts = (editData.parentName || '').split(' ');
+                const firstName = nameParts[0] || '';
+                const lastName = nameParts.slice(1).join(' ') || '';
+
+                setSelectedParent({
+                    parentId: editData.parentId,
+                    firstName: firstName || 'Parent',
+                    lastName: lastName || '(Linked)',
+                    email: '',
+                    phone: ''
+                } as Parent);
             }
         } else {
             setFormData({

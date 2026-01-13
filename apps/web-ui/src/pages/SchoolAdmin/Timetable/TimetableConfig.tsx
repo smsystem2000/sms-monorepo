@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Box,
     Typography,
@@ -73,22 +73,60 @@ interface PeriodDialogProps {
     onSave: (period: Period) => void;
     editData?: Period | null;
     shifts: Shift[];
+    nextPeriodNumber?: number;
 }
 
-const PeriodDialog = ({ open, onClose, onSave, editData, shifts }: PeriodDialogProps) => {
+const PeriodDialog = ({ open, onClose, onSave, editData, shifts, nextPeriodNumber = 1 }: PeriodDialogProps) => {
     const [formData, setFormData] = useState<Partial<Period>>({
-        periodNumber: editData?.periodNumber || 1,
-        name: editData?.name || '',
-        startTime: editData?.startTime || '08:00',
-        endTime: editData?.endTime || '08:45',
-        duration: editData?.duration || 45,
-        type: editData?.type || 'regular',
-        shiftId: editData?.shiftId || '',
-        isDoublePeriod: editData?.isDoublePeriod || false,
+        periodNumber: 1,
+        name: '',
+        startTime: '08:00',
+        endTime: '08:45',
+        duration: 45,
+        type: 'regular',
+        shiftId: '',
+        isDoublePeriod: false,
     });
+
+    const [errors, setErrors] = useState<Record<string, string>>({});
+
+    // Sync formData with editData or reset for new period
+    useEffect(() => {
+        if (open) {
+            if (editData) {
+                setFormData({
+                    periodNumber: editData.periodNumber,
+                    name: editData.name || '',
+                    startTime: editData.startTime || '08:00',
+                    endTime: editData.endTime || '08:45',
+                    duration: editData.duration || 45,
+                    type: editData.type || 'regular',
+                    shiftId: editData.shiftId || '',
+                    isDoublePeriod: editData.isDoublePeriod || false,
+                });
+            } else {
+                // New period - auto-increment period number
+                setFormData({
+                    periodNumber: nextPeriodNumber,
+                    name: '',
+                    startTime: '08:00',
+                    endTime: '08:45',
+                    duration: 45,
+                    type: 'regular',
+                    shiftId: '',
+                    isDoublePeriod: false,
+                });
+            }
+            setErrors({});
+        }
+    }, [open, editData, nextPeriodNumber]);
 
     const handleChange = (field: keyof Period, value: any) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
+        // Clear error when field is edited
+        if (errors[field]) {
+            setErrors((prev) => ({ ...prev, [field]: '' }));
+        }
 
         // Auto-calculate duration when times change
         if (field === 'startTime' || field === 'endTime') {
@@ -105,7 +143,29 @@ const PeriodDialog = ({ open, onClose, onSave, editData, shifts }: PeriodDialogP
         }
     };
 
+    const validate = (): boolean => {
+        const newErrors: Record<string, string> = {};
+        if (!formData.periodNumber || formData.periodNumber < 1) {
+            newErrors.periodNumber = 'Period number is required';
+        }
+        if (!formData.name?.trim()) {
+            newErrors.name = 'Period name is required';
+        }
+        if (!formData.startTime) {
+            newErrors.startTime = 'Start time is required';
+        }
+        if (!formData.endTime) {
+            newErrors.endTime = 'End time is required';
+        }
+        if (!formData.type) {
+            newErrors.type = 'Period type is required';
+        }
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleSubmit = () => {
+        if (!validate()) return;
         onSave(formData as Period);
         onClose();
     };
@@ -123,6 +183,8 @@ const PeriodDialog = ({ open, onClose, onSave, editData, shifts }: PeriodDialogP
                                 fullWidth
                                 value={formData.periodNumber}
                                 onChange={(e) => handleChange('periodNumber', parseInt(e.target.value))}
+                                error={!!errors.periodNumber}
+                                helperText={errors.periodNumber}
                             />
                         </Grid>
                         <Grid size={{ xs: 6 }}>
@@ -132,6 +194,8 @@ const PeriodDialog = ({ open, onClose, onSave, editData, shifts }: PeriodDialogP
                                 value={formData.name}
                                 onChange={(e) => handleChange('name', e.target.value)}
                                 placeholder="e.g., Period 1, Break, Lunch"
+                                error={!!errors.name}
+                                helperText={errors.name}
                             />
                         </Grid>
                     </Grid>
@@ -166,7 +230,7 @@ const PeriodDialog = ({ open, onClose, onSave, editData, shifts }: PeriodDialogP
                             />
                         </Grid>
                     </Grid>
-                    <FormControl fullWidth>
+                    <FormControl fullWidth error={!!errors.type}>
                         <InputLabel>Period Type</InputLabel>
                         <Select
                             value={formData.type}
@@ -177,6 +241,7 @@ const PeriodDialog = ({ open, onClose, onSave, editData, shifts }: PeriodDialogP
                                 <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>
                             ))}
                         </Select>
+                        {errors.type && <Typography variant="caption" color="error" sx={{ ml: 2, mt: 0.5 }}>{errors.type}</Typography>}
                     </FormControl>
                     {shifts.length > 0 && (
                         <FormControl fullWidth>
@@ -530,6 +595,7 @@ const TimetableConfigPage = () => {
                 onSave={handleSavePeriod}
                 editData={editPeriod}
                 shifts={config?.shifts || []}
+                nextPeriodNumber={(config?.periods?.length || 0) + 1}
             />
         </Box>
     );

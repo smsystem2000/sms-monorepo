@@ -126,6 +126,23 @@ export const SchoolAdminMenuItems: SideBarMenuItemType[] = [
     ],
   },
   {
+    name: "Exam Management",
+    icon: <MuiIcons.Assessment />,
+    isExpandable: true,
+    subItems: [
+      {
+        name: "Configuration",
+        icon: <MuiIcons.Settings />,
+        path: "/school-admin/exam/config",
+      },
+      {
+        name: "Exam Scheduler",
+        icon: <MuiIcons.Event />,
+        path: "/school-admin/exam/scheduler",
+      },
+    ],
+  },
+  {
     name: "School Location",
     icon: <MuiIcons.LocationOn />,
     path: "/school-admin/location",
@@ -137,6 +154,7 @@ export const SchoolAdminMenuItems: SideBarMenuItemType[] = [
     path: "/school-admin/profile",
     isExpandable: false,
   },
+
 ];
 
 // Teachers Menu Items

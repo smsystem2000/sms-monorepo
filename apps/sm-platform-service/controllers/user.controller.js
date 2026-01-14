@@ -1,4 +1,4 @@
-const { UserModel: User, EmailRegistryModel: EmailRegistry } = require("@sms/shared");
+const { UserModel: User, EmailRegistryModel: EmailRegistry, SchoolModel: School } = require("@sms/shared");
 
 // Helper function to generate userId
 const generateUserId = async () => {
@@ -93,7 +93,7 @@ const createUser = async (req, res) => {
     }
 };
 
-// Get User by userId
+// Get User by userId (with aggregated details)
 const getUserById = async (req, res) => {
     try {
         const { userId } = req.params;
@@ -107,10 +107,21 @@ const getUserById = async (req, res) => {
             });
         }
 
+        // Convert to object to add additional fields
+        const userObj = user.toObject();
+
+        // Fetch school details for schoolName
+        if (user.schoolId) {
+            const school = await School.findOne({ schoolId: user.schoolId });
+            if (school) {
+                userObj.schoolName = school.schoolName;
+            }
+        }
+
         return res.status(200).json({
             success: true,
             message: "User fetched successfully",
-            data: user,
+            data: userObj,
         });
     } catch (error) {
         console.error("Error fetching user:", error);

@@ -638,3 +638,32 @@ export const useExportTimetable = (schoolId: string, type: 'class' | 'teacher', 
         enabled: !!schoolId && !!type && !!id,
     });
 };
+
+// ==========================================
+// LEAVE INTEGRATION HOOKS
+// ==========================================
+
+interface TeachersOnLeaveResponse {
+    date: string;
+    teacherIds: string[];
+    leaves: {
+        teacherId: string;
+        teacherName: string;
+        leaveType: string;
+        reason: string;
+    }[];
+}
+
+export const useGetTeachersOnLeave = (schoolId: string, date: string) => {
+    return useQuery({
+        queryKey: ["teachers-on-leave", schoolId, date],
+        queryFn: () =>
+            useApi<ApiResponse<TeachersOnLeaveResponse>>(
+                "GET",
+                `/api/school/${schoolId}/leave/teachers-on-leave`,
+                undefined,
+                { date }
+            ),
+        enabled: !!schoolId && !!date,
+    });
+};

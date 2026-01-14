@@ -37,13 +37,23 @@ const generateSubstituteId = async (SubstituteAssignmentModel) => {
 const createSubstitute = async (req, res) => {
     try {
         const { schoolId } = req.params;
-        const { originalEntryId, substituteTeacherId, date, reason } = req.body;
+        const {
+            originalEntryId,
+            substituteTeacherId,
+            date,
+            reason,
+            // Alternative fields to find entry
+            classId,
+            sectionId,
+            dayOfWeek,
+            periodNumber
+        } = req.body;
         const createdBy = req.user?.userId || req.user?.teacherId || "admin";
 
-        if (!originalEntryId || !substituteTeacherId || !date) {
+        if (!substituteTeacherId || !date) {
             return res.status(400).json({
                 success: false,
-                message: "Original entry ID, substitute teacher ID, and date are required",
+                message: "Substitute teacher ID and date are required",
             });
         }
 
@@ -51,12 +61,28 @@ const createSubstitute = async (req, res) => {
         const models = getModels(schoolDbName);
         const { SubstituteAssignment, TimetableEntry, Teacher } = models;
 
-        // Get the original entry
-        const originalEntry = await TimetableEntry.findOne({ schoolId, entryId: originalEntryId });
+        let originalEntry;
+
+        // If originalEntryId provided, use it directly
+        if (originalEntryId) {
+            originalEntry = await TimetableEntry.findOne({ schoolId, entryId: originalEntryId });
+        }
+        // Otherwise, find entry by class/section/day/period
+        else if (classId && sectionId && dayOfWeek && periodNumber !== undefined) {
+            originalEntry = await TimetableEntry.findOne({
+                schoolId,
+                classId,
+                sectionId,
+                dayOfWeek,
+                periodNumber: parseInt(periodNumber, 10),
+                isActive: true
+            });
+        }
+
         if (!originalEntry) {
             return res.status(404).json({
                 success: false,
-                message: "Original timetable entry not found",
+                message: "Original timetable entry not found. Please provide either originalEntryId or classId, sectionId, dayOfWeek, periodNumber",
             });
         }
 
@@ -79,7 +105,7 @@ const createSubstitute = async (req, res) => {
         // Check if substitute already exists for this entry on this date
         const existingSubstitute = await SubstituteAssignment.findOne({
             schoolId,
-            originalEntryId,
+            originalEntryId: originalEntry.entryId,
             date: new Date(date),
             status: { $in: ["pending", "confirmed"] },
         });
@@ -96,7 +122,7 @@ const createSubstitute = async (req, res) => {
         const newSubstitute = new SubstituteAssignment({
             substituteId,
             schoolId,
-            originalEntryId,
+            originalEntryId: originalEntry.entryId,
             originalTeacherId: originalEntry.teacherId,
             substituteTeacherId,
             date: new Date(date),

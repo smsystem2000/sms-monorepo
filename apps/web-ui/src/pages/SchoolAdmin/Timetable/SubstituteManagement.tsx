@@ -101,13 +101,17 @@ const SubstituteManagement = () => {
 
     const handleCreateSubstitute = async () => {
         try {
-            // Note: Using any to allow flexible form data submission
-            // The backend accepts additional fields for easier substitute creation
+            // Send all form data - backend will find entry based on class/section/day/period
             await createSubstitute.mutateAsync({
                 originalEntryId: '', // Backend will find entry based on other fields
                 substituteTeacherId: formData.substituteTeacherId,
                 date: selectedDate,
                 reason: formData.reason,
+                // Alternative fields to find the timetable entry
+                classId: formData.classId,
+                sectionId: formData.sectionId,
+                dayOfWeek: formData.dayOfWeek,
+                periodNumber: formData.periodNumber,
             } as any);
             setCreateDialogOpen(false);
             setFormData({
@@ -220,9 +224,15 @@ const SubstituteManagement = () => {
                                         <TableRow key={sub.substituteId} sx={{ '&:hover': { bgcolor: 'action.hover' } }}>
                                             <TableCell>{sub.originalTeacher?.name || sub.originalTeacherId}</TableCell>
                                             <TableCell>{sub.substituteTeacher?.name || sub.substituteTeacherId}</TableCell>
-                                            <TableCell>{sub.class?.name || sub.classId} {sub.section?.name || ''}</TableCell>
                                             <TableCell>
-                                                <Chip label={`Period ${sub.periodNumber}`} size="small" color="primary" />
+                                                {sub.entry?.classId || '-'} {sub.entry?.sectionId || ''}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Chip
+                                                    label={`${sub.entry?.dayOfWeek?.charAt(0).toUpperCase()}${sub.entry?.dayOfWeek?.slice(1) || ''} - Period ${sub.entry?.periodNumber || '?'}`}
+                                                    size="small"
+                                                    color="primary"
+                                                />
                                             </TableCell>
                                             <TableCell>{sub.reason || '-'}</TableCell>
                                             <TableCell>

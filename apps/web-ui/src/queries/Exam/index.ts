@@ -216,12 +216,11 @@ export const useGetStudentReportCard = (schoolId: string, studentId: string) => 
 };
 
 export const useBulkGenerateAdmitCards = (schoolId: string) => {
-    // const queryClient = useQueryClient();
+    const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (data: { examId: string, classId?: string }) => useApi("POST", `/api/academics/school/${schoolId}/registration/bulk-admit-card`, data),
-        onSuccess: () => {
-            // Invalidate maybe registration status? For now just generic or specific if I implement a hook for it.
-            // queryClient.invalidateQueries({ queryKey: [EXAM_KEYS.ADMIT_CARD] });
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: [EXAM_KEYS.ADMIT_CARD, schoolId, variables.examId] });
         }
     });
 };
@@ -231,5 +230,13 @@ export const useGetAdmitCard = (schoolId: string, examId: string, studentId: str
         queryKey: [EXAM_KEYS.ADMIT_CARD, schoolId, examId, studentId],
         queryFn: () => useApi<ApiResponse<AdmitCardData>>("GET", `/api/academics/school/${schoolId}/registration/${examId}/student/${studentId}`),
         enabled: !!schoolId && !!examId && !!studentId
+    });
+};
+
+export const useGetExamRegistrations = (schoolId: string, examId: string, classId?: string) => {
+    return useQuery({
+        queryKey: [EXAM_KEYS.ADMIT_CARD, schoolId, examId, "list", classId],
+        queryFn: () => useApi<ApiResponse<any[]>>("GET", `/api/academics/school/${schoolId}/registration/${examId}/list`, undefined, { classId }),
+        enabled: !!schoolId && !!examId
     });
 };

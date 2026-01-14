@@ -3,8 +3,7 @@ const { AdminModel: Admin, SchoolModel: School, EmailRegistryModel: EmailRegistr
 const { getSchoolDbConnection } = require("../configs/db");
 
 // Schema imports for school database queries
-// Schema imports for school database queries
-const { TeacherSchema: teacherSchema, StudentSchema: studentSchema, ParentSchema: parentSchema } = require("@sms/shared");
+const { TeacherSchema: teacherSchema, StudentSchema: studentSchema, ParentSchema: parentSchema, ClassSchema: classSchema, SubjectSchema: subjectSchema } = require("@sms/shared");
 
 /**
  * Unified Login - Single login for all user types
@@ -104,6 +103,7 @@ const login = async (req, res) => {
                 role: user.role,
                 schoolId: user.schoolId,
                 schoolDbName: school.schoolDbName,
+                schoolName: school.schoolName,
             };
 
         } else {
@@ -164,6 +164,7 @@ const login = async (req, res) => {
                 role: role,
                 schoolId: schoolId,
                 schoolDbName: school.schoolDbName,
+                schoolName: school.schoolName,
                 firstName: user.firstName,
                 lastName: user.lastName,
             };
@@ -174,11 +175,33 @@ const login = async (req, res) => {
                 tokenPayload.classes = user.classes || [];
                 tokenPayload.subjects = user.subjects || [];
                 tokenPayload.department = user.department;
+
+                // Fetch subject names
+                try {
+                    const Subject = schoolDb.model("Subject", subjectSchema);
+                    const subjectDocs = await Subject.find({ subjectId: { $in: user.subjects || [] } }).lean();
+                    tokenPayload.subjectNames = subjectDocs.map(s => s.name);
+                } catch (e) {
+                    tokenPayload.subjectNames = [];
+                }
             } else if (role === "student") {
                 tokenPayload.studentId = user.studentId;
                 tokenPayload.class = user.class;
                 tokenPayload.section = user.section;
                 tokenPayload.rollNumber = user.rollNumber;
+
+                // Fetch class and section names
+                try {
+                    const Class = schoolDb.model("Class", classSchema);
+                    const classDoc = await Class.findOne({ classId: user.class }).lean();
+                    if (classDoc) {
+                        tokenPayload.className = classDoc.name;
+                        const sectionDoc = classDoc.sections?.find(s => s.sectionId === user.section || s._id?.toString() === user.section);
+                        tokenPayload.sectionName = sectionDoc?.name || user.section;
+                    }
+                } catch (e) {
+                    // Fallback to IDs if lookup fails
+                }
             } else if (role === "parent") {
                 tokenPayload.parentId = user.parentId;
                 tokenPayload.studentIds = user.studentIds || [];

@@ -211,4 +211,7 @@ export interface AdmitCardData {
     admitCardGenerated: boolean;
     admitCardUrl?: string;
     ineligibilityReason?: string;
+    rollNumber?: string;
+    classId?: string;
+    sectionId?: string;
 }

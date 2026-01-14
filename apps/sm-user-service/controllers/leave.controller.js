@@ -433,6 +433,61 @@ const getStudentLeavesForTeacher = async (req, res) => {
         });
     }
 };
+/**
+ * Get teachers on leave for a specific date
+ * GET /api/school/:schoolId/leave/teachers-on-leave
+ */
+const getTeachersOnLeaveForDate = async (req, res) => {
+    try {
+        const { schoolId } = req.params;
+        const { date } = req.query; // YYYY-MM-DD format
+
+        if (!date) {
+            return res.status(400).json({
+                success: false,
+                message: "date query parameter is required (YYYY-MM-DD)",
+            });
+        }
+
+        const LeaveModel = await getLeaveModel(schoolId);
+
+        // Parse the date and create range for the whole day
+        const targetDate = new Date(date);
+        targetDate.setHours(0, 0, 0, 0);
+
+        // Find approved teacher leaves where targetDate falls within startDate-endDate
+        const leaves = await LeaveModel.find({
+            applicantType: "teacher",
+            status: "approved",
+            startDate: { $lte: targetDate },
+            endDate: { $gte: targetDate },
+        }).lean();
+
+        // Extract teacher IDs
+        const teacherIds = leaves.map((leave) => leave.applicantId);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                date,
+                teacherIds,
+                leaves: leaves.map((l) => ({
+                    teacherId: l.applicantId,
+                    teacherName: l.applicantName,
+                    leaveType: l.leaveType,
+                    reason: l.reason,
+                })),
+            },
+        });
+    } catch (error) {
+        console.error("Error getting teachers on leave:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to get teachers on leave",
+            error: error.message,
+        });
+    }
+};
 
 module.exports = {
     applyLeave,
@@ -443,4 +498,6 @@ module.exports = {
     cancelLeave,
     getLeaveStats,
     getStudentLeavesForTeacher,
+    getTeachersOnLeaveForDate,
 };
+

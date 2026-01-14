@@ -82,10 +82,46 @@ const getAdmitCard = async (req, res) => {
 const bulkGenerateAdmitCards = async (req, res) => {
     try {
         const { schoolId } = req.params;
-        const { examId, students } = req.body; // Array of student objects with {studentId, classId, sectionId, rollNumber}
+        const { examId, students: providedStudents } = req.body;
 
         const schoolDbName = await getSchoolDbName(schoolId);
-        const { StudentExamRegistration } = getModels(schoolDbName);
+        const schoolDb = getSchoolDbConnection(schoolDbName);
+        const { StudentExamRegistration, Exam } = getModels(schoolDbName);
+
+        // Get the exam to find participating classes
+        const exam = await Exam.findOne({ schoolId, examId });
+        if (!exam) {
+            return res.status(404).json({ success: false, message: "Exam not found" });
+        }
+
+        let students = providedStudents;
+
+        // If no students provided, fetch all students from exam's classes
+        if (!students || students.length === 0) {
+            // Get Student model from school connection
+            const { StudentSchema } = require("@sms/shared");
+            const Student = schoolDb.model("Student", StudentSchema);
+
+            // Fetch all students from the participating classes
+            const fetchedStudents = await Student.find({
+                schoolId,
+                class: { $in: exam.classes }
+            }).select('studentId class section rollNumber').lean();
+
+            if (!fetchedStudents || fetchedStudents.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "No students found in participating classes"
+                });
+            }
+
+            students = fetchedStudents.map(s => ({
+                studentId: s.studentId,
+                classId: s.class,
+                sectionId: s.section || s.sectionId,
+                rollNumber: s.rollNumber || 'N/A'
+            }));
+        }
 
         const operations = students.map(student => ({
             updateOne: {
@@ -107,11 +143,62 @@ const bulkGenerateAdmitCards = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: `Processed ${result.upsertedCount + result.modifiedCount} admit cards`,
-            data: result
+            message: `Generated admit cards for ${result.upsertedCount + result.modifiedCount} students`,
+            data: {
+                totalProcessed: students.length,
+                upserted: result.upsertedCount,
+                modified: result.modifiedCount
+            }
         });
 
     } catch (error) {
+        console.error("Bulk generate admit cards error:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Get all admit card registrations for an exam
+const getExamRegistrations = async (req, res) => {
+    try {
+        const { schoolId, examId } = req.params;
+        const { classId } = req.query;
+
+        const schoolDbName = await getSchoolDbName(schoolId);
+        const schoolDb = getSchoolDbConnection(schoolDbName);
+        const { StudentExamRegistration } = getModels(schoolDbName);
+
+        // Get Student model for name lookup
+        const { StudentSchema } = require("@sms/shared");
+        const Student = schoolDb.model("Student", StudentSchema);
+
+        const query = { schoolId, examId };
+        if (classId) query.classId = classId;
+
+        const registrations = await StudentExamRegistration.find(query).lean();
+
+        // Enrich with student names
+        const studentIds = registrations.map(r => r.studentId);
+        const students = await Student.find({ studentId: { $in: studentIds } })
+            .select('studentId firstName lastName email class section rollNumber')
+            .lean();
+
+        const studentMap = {};
+        students.forEach(s => {
+            studentMap[s.studentId] = s;
+        });
+
+        const enrichedRegistrations = registrations.map(r => ({
+            ...r,
+            student: studentMap[r.studentId] || null
+        }));
+
+        res.status(200).json({
+            success: true,
+            data: enrichedRegistrations,
+            total: enrichedRegistrations.length
+        });
+    } catch (error) {
+        console.error("Get exam registrations error:", error);
         res.status(500).json({ success: false, message: error.message });
     }
 };
@@ -119,5 +206,6 @@ const bulkGenerateAdmitCards = async (req, res) => {
 module.exports = {
     generateAdmitCard,
     getAdmitCard,
-    bulkGenerateAdmitCards
+    bulkGenerateAdmitCards,
+    getExamRegistrations
 };

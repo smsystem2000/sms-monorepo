@@ -102,9 +102,14 @@ export interface CreateAdminPayload {
 export interface SchoolAdmin {
     userId: string;
     username: string;
+    firstName?: string;
+    lastName?: string;
     email: string;
     role: "sch_admin";
     schoolId: string;
+    schoolName?: string;
+    phone?: string;
+    phoneNumber?: string;
     contactNumber?: string;
     status: "active" | "inactive";
     createdAt?: string;
@@ -131,13 +136,18 @@ export interface UpdateSchoolAdminPayload {
 export interface Teacher {
     teacherId: string;
     schoolId: string;
+    schoolName?: string;
     firstName: string;
     lastName: string;
     email: string;
     phone?: string;
+    phoneNumber?: string;
     subjects: string[];
+    subjectNames?: string[];
     classes: string[];
+    classNames?: string[];
     sections?: string[];
+    department?: string;
     status: "active" | "inactive";
     profileImage?: string;
     createdAt?: string;
@@ -174,10 +184,12 @@ export interface UpdateTeacherPayload {
 export interface Student {
     studentId: string;
     schoolId: string;
+    schoolName?: string;
     firstName: string;
     lastName: string;
     email?: string;
     phone?: string;
+    phoneNumber?: string;
     class: string;
     className?: string;
     section?: string;

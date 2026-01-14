@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
     Box,
     Typography,
@@ -19,6 +19,7 @@ import {
     Alert,
     ToggleButtonGroup,
     ToggleButton,
+    Chip,
 } from '@mui/material';
 import {
     Add as AddIcon,
@@ -26,6 +27,8 @@ import {
     TableChart as TableIcon,
     List as ListIcon,
     PictureAsPdf as PdfIcon,
+    Warning as WarningIcon,
+    SwapHoriz as SwapIcon,
 } from '@mui/icons-material';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -35,6 +38,9 @@ import {
     useCreateEntry,
     useUpdateEntry,
     useDeleteEntry,
+    useGetTeachersOnLeave,
+    useGetFreeTeachers,
+    useGetSubstitutesForDate,
 } from '../../../queries/Timetable';
 import { useGetClasses } from '../../../queries/Class';
 import { useGetTeachers } from '../../../queries/Teacher';
@@ -56,14 +62,55 @@ interface EntryDialogProps {
     teachers: any[];
     subjects: any[];
     isLoading: boolean;
+    teachersOnLeave?: string[];
+    schoolId: string;
 }
 
 const EntryDialog = ({
     open, onClose, onSave, editData, dayOfWeek, periodNumber,
-    classId, sectionId, teachers, subjects, isLoading
+    classId, sectionId, teachers, subjects, isLoading, teachersOnLeave = [], schoolId
 }: EntryDialogProps) => {
     const [teacherId, setTeacherId] = useState(editData?.teacherId || '');
     const [subjectId, setSubjectId] = useState(editData?.subjectId || '');
+
+    // Reset state when editData changes
+    useEffect(() => {
+        setTeacherId(editData?.teacherId || '');
+        setSubjectId(editData?.subjectId || '');
+    }, [editData, open]);
+
+    // Filter teachers who can teach the selected subject
+    const subjectTeachers = useMemo(() => {
+        if (!subjectId) return teachers;
+        return teachers.filter((t: any) =>
+            t.subjects?.includes(subjectId) || t.subjects?.length === 0
+        );
+    }, [subjectId, teachers]);
+
+    // Auto-select teacher if only one can teach this subject
+    useEffect(() => {
+        if (subjectId && subjectTeachers.length === 1) {
+            setTeacherId(subjectTeachers[0].teacherId);
+        } else if (!subjectId) {
+            setTeacherId('');
+        }
+    }, [subjectId, subjectTeachers]);
+
+    // Check if currently selected teacher is on leave
+    const isTeacherOnLeave = teachersOnLeave.includes(teacherId);
+
+    // Get free teachers for suggestions
+    const { data: freeTeachersData } = useGetFreeTeachers(schoolId, dayOfWeek, periodNumber);
+    const freeTeachers = freeTeachersData?.data || [];
+
+    // Filter suggested teachers - those who are free AND can teach the subject
+    const suggestedSubstitutes = useMemo(() => {
+        if (!subjectId || !isTeacherOnLeave) return [];
+        return freeTeachers.filter((ft: any) => {
+            const teacher = teachers.find((t: any) => t.teacherId === ft.teacherId);
+            return teacher?.subjects?.includes(subjectId);
+        });
+    }, [freeTeachers, subjectId, isTeacherOnLeave, teachers]);
 
     const handleSubmit = () => {
         onSave({
@@ -75,6 +122,8 @@ const EntryDialog = ({
             periodNumber,
         });
     };
+
+    const showTeacherDropdown = subjectTeachers.length > 1 || !subjectId;
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -100,20 +149,71 @@ const EntryDialog = ({
                             ))}
                         </Select>
                     </FormControl>
-                    <FormControl fullWidth>
-                        <InputLabel>Teacher</InputLabel>
-                        <Select
-                            value={teacherId}
-                            label="Teacher"
-                            onChange={(e) => setTeacherId(e.target.value)}
-                        >
-                            {teachers.map((t: any) => (
-                                <MenuItem key={t.teacherId} value={t.teacherId}>
-                                    {t.firstName} {t.lastName}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
+
+                    {/* Show auto-selected teacher info or dropdown */}
+                    {subjectId && subjectTeachers.length === 1 && (
+                        <Box sx={{ p: 2, bgcolor: 'success.light', borderRadius: 1, color: 'success.contrastText' }}>
+                            <Typography variant="body2">
+                                <strong>Auto-assigned:</strong> {subjectTeachers[0].firstName} {subjectTeachers[0].lastName}
+                            </Typography>
+                            <Typography variant="caption">
+                                (Only teacher assigned to this subject)
+                            </Typography>
+                        </Box>
+                    )}
+
+                    {showTeacherDropdown && (
+                        <FormControl fullWidth>
+                            <InputLabel>Teacher</InputLabel>
+                            <Select
+                                value={teacherId}
+                                label="Teacher"
+                                onChange={(e) => setTeacherId(e.target.value)}
+                            >
+                                {subjectTeachers.map((t: any) => {
+                                    const onLeave = teachersOnLeave.includes(t.teacherId);
+                                    return (
+                                        <MenuItem
+                                            key={t.teacherId}
+                                            value={t.teacherId}
+                                            sx={onLeave ? { color: 'error.main', bgcolor: 'error.lighter' } : {}}
+                                        >
+                                            {t.firstName} {t.lastName}
+                                            {onLeave && <Chip label="On Leave" size="small" color="error" sx={{ ml: 1 }} />}
+                                        </MenuItem>
+                                    );
+                                })}
+                            </Select>
+                        </FormControl>
+                    )}
+
+                    {/* Leave Warning */}
+                    {isTeacherOnLeave && (
+                        <Alert severity="warning" icon={<WarningIcon />}>
+                            This teacher is on leave today! Consider assigning a substitute.
+                        </Alert>
+                    )}
+
+                    {/* Substitute Suggestions */}
+                    {isTeacherOnLeave && suggestedSubstitutes.length > 0 && (
+                        <Box sx={{ p: 2, bgcolor: 'info.lighter', borderRadius: 1 }}>
+                            <Typography variant="subtitle2" gutterBottom>
+                                Suggested Substitutes (Free & Can Teach Subject):
+                            </Typography>
+                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                {suggestedSubstitutes.map((sub: any) => (
+                                    <Chip
+                                        key={sub.teacherId}
+                                        label={sub.name}
+                                        onClick={() => setTeacherId(sub.teacherId)}
+                                        color="primary"
+                                        variant="outlined"
+                                        clickable
+                                    />
+                                ))}
+                            </Box>
+                        </Box>
+                    )}
                 </Box>
             </DialogContent>
             <DialogActions>
@@ -139,6 +239,9 @@ const TimetableMaster = () => {
     const [editEntry, setEditEntry] = useState<TimetableEntry | null>(null);
     const [selectedSlot, setSelectedSlot] = useState({ day: '', period: 0 });
 
+    // Get today's date for leave checking
+    const today = new Date().toISOString().split('T')[0];
+
     // Data fetching
     const { data: configData, isLoading: configLoading } = useGetActiveConfig(schoolId);
     const { data: classesData } = useGetClasses(schoolId);
@@ -147,6 +250,8 @@ const TimetableMaster = () => {
     const { data: timetableData, isLoading: timetableLoading } = useGetClassTimetable(
         schoolId, selectedClass, selectedSection
     );
+    const { data: teachersOnLeaveData } = useGetTeachersOnLeave(schoolId, today);
+    const { data: substitutesData } = useGetSubstitutesForDate(schoolId, today);
 
     const createEntry = useCreateEntry(schoolId);
     const updateEntry = useUpdateEntry(schoolId);
@@ -157,6 +262,8 @@ const TimetableMaster = () => {
     const teachers = teachersData?.data || [];
     const subjects = subjectsData?.data || [];
     const entries = timetableData?.data?.entries || [];
+    const teachersOnLeave = teachersOnLeaveData?.data?.teacherIds || [];
+    const substitutes = substitutesData?.data || [];
 
     // Get sections for selected class
     const selectedClassObj = classes.find((c: any) => c.classId === selectedClass);
@@ -175,6 +282,21 @@ const TimetableMaster = () => {
         });
         return map;
     }, [entries]);
+
+    // Create substitute lookup map by day-period for current class/section
+    const substituteMap = useMemo(() => {
+        const map: Record<string, any> = {};
+        substitutes.forEach((sub: any) => {
+            // Only include substitutes for the currently selected class/section
+            if (sub.entry?.classId === selectedClass && sub.entry?.sectionId === selectedSection) {
+                map[`${sub.entry?.dayOfWeek}-${sub.entry?.periodNumber}`] = sub;
+            }
+        });
+        return map;
+    }, [substitutes, selectedClass, selectedSection]);
+
+    // Get today's day name for highlighting
+    const todayDayName = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
 
     const handleSlotClick = (day: string, period: number) => {
         const existingEntry = entryMap[`${day}-${period}`];
@@ -212,6 +334,10 @@ const TimetableMaster = () => {
     };
 
     const getEntryColor = (entry: TimetableEntry) => {
+        // Check if teacher is on leave - show warning color
+        if (teachersOnLeave.includes(entry.teacherId)) {
+            return '#ffcdd2'; // Light red for warning
+        }
         // Generate consistent color based on subject
         const hash = entry.subjectId.split('').reduce((a, b) => {
             a = ((a << 5) - a) + b.charCodeAt(0);
@@ -330,6 +456,14 @@ const TimetableMaster = () => {
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
                 <Typography variant="h5" fontWeight={600}>Master Timetable</Typography>
                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    {teachersOnLeave.length > 0 && (
+                        <Chip
+                            icon={<WarningIcon />}
+                            label={`${teachersOnLeave.length} teacher(s) on leave today`}
+                            color="warning"
+                            size="small"
+                        />
+                    )}
                     {selectedClass && selectedSection && (
                         <Button
                             variant="outlined"
@@ -422,7 +556,13 @@ const TimetableMaster = () => {
                                     <tr>
                                         <th>Period</th>
                                         {config.workingDays.map((day) => (
-                                            <th key={day}>{day.charAt(0).toUpperCase() + day.slice(1)}</th>
+                                            <th
+                                                key={day}
+                                                style={day === todayDayName ? { backgroundColor: '#1565c0' } : {}}
+                                            >
+                                                {day.charAt(0).toUpperCase() + day.slice(1)}
+                                                {day === todayDayName && ' (Today)'}
+                                            </th>
                                         ))}
                                     </tr>
                                 </thead>
@@ -439,13 +579,22 @@ const TimetableMaster = () => {
                                             </td>
                                             {config.workingDays.map((day) => {
                                                 const entry = entryMap[`${day}-${period.periodNumber}`];
+                                                const substitute = substituteMap[`${day}-${period.periodNumber}`];
+                                                const isOnLeave = entry && teachersOnLeave.includes(entry.teacherId);
+                                                const hasSubstitute = !!substitute && day === todayDayName;
+
                                                 return (
                                                     <td
                                                         key={`${day}-${period.periodNumber}`}
                                                         style={{
-                                                            backgroundColor: entry ? getEntryColor(entry) : 'white',
+                                                            backgroundColor: hasSubstitute
+                                                                ? '#fff3e0' // Orange tint for substituted
+                                                                : (entry ? getEntryColor(entry) : 'white'),
                                                             cursor: 'pointer',
                                                             position: 'relative',
+                                                            border: hasSubstitute
+                                                                ? '3px solid #ff9800' // Orange border for substitute
+                                                                : (isOnLeave && day === todayDayName ? '3px solid #f44336' : undefined),
                                                         }}
                                                         onClick={() => handleSlotClick(day, period.periodNumber)}
                                                     >
@@ -454,9 +603,38 @@ const TimetableMaster = () => {
                                                                 <Typography variant="body2" fontWeight={600}>
                                                                     {entry.subject?.name || entry.subjectId}
                                                                 </Typography>
-                                                                <Typography variant="caption" color="text.secondary">
+
+                                                                {/* Original Teacher - crossed out if has substitute or on leave */}
+                                                                <Typography
+                                                                    variant="caption"
+                                                                    color={(hasSubstitute || isOnLeave) ? 'error' : 'text.secondary'}
+                                                                    sx={(hasSubstitute || (isOnLeave && day === todayDayName)) ? { textDecoration: 'line-through' } : {}}
+                                                                >
                                                                     {entry.teacher?.name || entry.teacherId}
                                                                 </Typography>
+
+                                                                {/* Substitute Teacher Display */}
+                                                                {hasSubstitute && (
+                                                                    <Tooltip title={`Substitute for: ${entry.teacher?.name || entry.teacherId}`}>
+                                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                                                                            <SwapIcon sx={{ fontSize: 14, color: 'success.main' }} />
+                                                                            <Typography variant="caption" color="success.main" fontWeight={600}>
+                                                                                {substitute.substituteTeacher?.name || substitute.substituteTeacherId}
+                                                                            </Typography>
+                                                                        </Box>
+                                                                    </Tooltip>
+                                                                )}
+
+                                                                {/* Absent but no substitute yet */}
+                                                                {isOnLeave && day === todayDayName && !hasSubstitute && (
+                                                                    <Chip
+                                                                        label="Absent"
+                                                                        size="small"
+                                                                        color="error"
+                                                                        sx={{ mt: 0.5, fontSize: '0.6rem', height: 18 }}
+                                                                    />
+                                                                )}
+
                                                                 <IconButton
                                                                     size="small"
                                                                     sx={{ position: 'absolute', top: 2, right: 2 }}
@@ -487,10 +665,11 @@ const TimetableMaster = () => {
                             {config.workingDays.map((day) => (
                                 <Box key={day} sx={{ mb: 3 }}>
                                     <Typography variant="h6" sx={{ mb: 1, textTransform: 'capitalize' }}>
-                                        {day}
+                                        {day} {day === todayDayName && '(Today)'}
                                     </Typography>
                                     {regularPeriods.map((period) => {
                                         const entry = entryMap[`${day}-${period.periodNumber}`];
+                                        const isOnLeave = entry && teachersOnLeave.includes(entry.teacherId);
                                         return (
                                             <Box
                                                 key={period.periodNumber}
@@ -502,6 +681,7 @@ const TimetableMaster = () => {
                                                     borderRadius: 1,
                                                     bgcolor: entry ? getEntryColor(entry) : 'action.hover',
                                                     cursor: 'pointer',
+                                                    border: isOnLeave && day === todayDayName ? '2px solid #f44336' : 'none',
                                                 }}
                                                 onClick={() => handleSlotClick(day, period.periodNumber)}
                                             >
@@ -518,6 +698,9 @@ const TimetableMaster = () => {
                                                         <>
                                                             <Typography variant="body2">
                                                                 {entry.subject?.name} - {entry.teacher?.name}
+                                                                {isOnLeave && day === todayDayName && (
+                                                                    <Chip label="Absent" size="small" color="error" sx={{ ml: 1 }} />
+                                                                )}
                                                             </Typography>
                                                         </>
                                                     ) : (
@@ -555,6 +738,8 @@ const TimetableMaster = () => {
                 teachers={teachers}
                 subjects={subjects}
                 isLoading={createEntry.isPending || updateEntry.isPending}
+                teachersOnLeave={teachersOnLeave}
+                schoolId={schoolId}
             />
         </Box>
     );

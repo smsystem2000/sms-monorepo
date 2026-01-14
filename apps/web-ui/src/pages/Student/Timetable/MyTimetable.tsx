@@ -12,16 +12,18 @@ import {
     CardContent,
     Divider,
     Button,
+    Tooltip,
 } from '@mui/material';
 import {
     TableChart as TableIcon,
     List as ListIcon,
     Today as TodayIcon,
     PictureAsPdf as PdfIcon,
+    SwapHoriz as SwapIcon,
 } from '@mui/icons-material';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { useGetClassTimetable, useGetActiveConfig } from '../../../queries/Timetable';
+import { useGetClassTimetable, useGetActiveConfig, useGetSubstitutesForDate } from '../../../queries/Timetable';
 import TokenService from '../../../queries/token/tokenService';
 import type { TimetableEntry } from '../../../types/timetable.types';
 
@@ -36,11 +38,16 @@ const MyTimetable = () => {
 
     const [viewMode, setViewMode] = useState<ViewMode>('table');
 
+    // Get today's date for substitute fetching
+    const todayDate = new Date().toISOString().split('T')[0];
+
     const { data: configData } = useGetActiveConfig(schoolId);
     const { data: timetableData, isLoading, error } = useGetClassTimetable(schoolId, classId, sectionId);
+    const { data: substitutesData } = useGetSubstitutesForDate(schoolId, todayDate);
 
     const config = configData?.data;
     const entries = timetableData?.data?.entries || [];
+    const substitutes = substitutesData?.data || [];
 
     // Get regular periods only
     const regularPeriods = useMemo(() => {
@@ -56,11 +63,23 @@ const MyTimetable = () => {
         return map;
     }, [entries]);
 
+    // Create substitute lookup map by day-period for current class/section
+    const substituteMap = useMemo(() => {
+        const map: Record<string, any> = {};
+        substitutes.forEach((sub: any) => {
+            // Only include substitutes for the current class/section
+            if (sub.entry?.classId === classId && sub.entry?.sectionId === sectionId) {
+                map[`${sub.entry?.dayOfWeek}-${sub.entry?.periodNumber}`] = sub;
+            }
+        });
+        return map;
+    }, [substitutes, classId, sectionId]);
+
     // Get today's day
     const today = new Date();
     const todayDayName = today.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
 
-    // Today's schedule
+    // Today's schedule with substitutes
     const todaySchedule = useMemo(() => {
         return entries.filter((e: TimetableEntry) => e.dayOfWeek === todayDayName)
             .sort((a: TimetableEntry, b: TimetableEntry) => a.periodNumber - b.periodNumber);
@@ -226,12 +245,28 @@ const MyTimetable = () => {
                         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                             {todaySchedule.map((entry: TimetableEntry) => {
                                 const period = regularPeriods.find((p) => p.periodNumber === entry.periodNumber);
+                                const substitute = substituteMap[`${entry.dayOfWeek}-${entry.periodNumber}`];
+                                const hasSubstitute = !!substitute;
+
                                 return (
-                                    <Chip
+                                    <Tooltip
                                         key={entry.entryId}
-                                        label={`P${entry.periodNumber} (${period?.startTime || ''}): ${entry.subject?.name || entry.subjectId} - ${entry.teacher?.name || 'TBA'}`}
-                                        sx={{ bgcolor: 'white', color: 'success.dark' }}
-                                    />
+                                        title={hasSubstitute ? `Substitute for: ${entry.teacher?.name || 'Original'}` : ''}
+                                    >
+                                        <Chip
+                                            icon={hasSubstitute ? <SwapIcon /> : undefined}
+                                            label={
+                                                hasSubstitute
+                                                    ? `P${entry.periodNumber} (${period?.startTime || ''}): ${entry.subject?.name} - ${substitute.substituteTeacher?.name || 'Sub'}`
+                                                    : `P${entry.periodNumber} (${period?.startTime || ''}): ${entry.subject?.name || entry.subjectId} - ${entry.teacher?.name || 'TBA'}`
+                                            }
+                                            sx={{
+                                                bgcolor: hasSubstitute ? '#fff3e0' : 'white',
+                                                color: hasSubstitute ? '#e65100' : 'success.dark',
+                                                border: hasSubstitute ? '2px solid #ff9800' : undefined
+                                            }}
+                                        />
+                                    </Tooltip>
                                 );
                             })}
                         </Box>
@@ -288,11 +323,17 @@ const MyTimetable = () => {
                                         </td>
                                         {config.workingDays.map((day) => {
                                             const entry = entryMap[`${day}-${period.periodNumber}`];
+                                            const substitute = substituteMap[`${day}-${period.periodNumber}`];
+                                            const hasSubstitute = !!substitute && day === todayDayName;
+
                                             return (
                                                 <td
                                                     key={`${day}-${period.periodNumber}`}
                                                     style={{
-                                                        backgroundColor: entry ? getEntryColor(entry) : (day === todayDayName ? '#e8f5e9' : 'white'),
+                                                        backgroundColor: hasSubstitute
+                                                            ? '#fff3e0' // Orange tint for substituted
+                                                            : (entry ? getEntryColor(entry) : (day === todayDayName ? '#e8f5e9' : 'white')),
+                                                        border: hasSubstitute ? '2px solid #ff9800' : undefined,
                                                     }}
                                                 >
                                                     {entry ? (
@@ -300,9 +341,27 @@ const MyTimetable = () => {
                                                             <Typography variant="body2" fontWeight={600}>
                                                                 {entry.subject?.name || entry.subjectId}
                                                             </Typography>
-                                                            <Typography variant="caption" color="text.secondary">
+
+                                                            {/* Original Teacher - strikethrough if has substitute */}
+                                                            <Typography
+                                                                variant="caption"
+                                                                color={hasSubstitute ? 'error' : 'text.secondary'}
+                                                                sx={hasSubstitute ? { textDecoration: 'line-through' } : {}}
+                                                            >
                                                                 {entry.teacher?.name || 'TBA'}
                                                             </Typography>
+
+                                                            {/* Substitute Teacher Display */}
+                                                            {hasSubstitute && (
+                                                                <Tooltip title={`Substitute for: ${entry.teacher?.name || 'Original'}`}>
+                                                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                                                                        <SwapIcon sx={{ fontSize: 14, color: 'success.main' }} />
+                                                                        <Typography variant="caption" color="success.main" fontWeight={600}>
+                                                                            {substitute.substituteTeacher?.name}
+                                                                        </Typography>
+                                                                    </Box>
+                                                                </Tooltip>
+                                                            )}
                                                         </Box>
                                                     ) : (
                                                         <Typography variant="body2" color="text.disabled">-</Typography>

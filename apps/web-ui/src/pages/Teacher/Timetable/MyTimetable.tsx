@@ -12,6 +12,7 @@ import {
     CardContent,
     Divider,
     Button,
+    Tooltip,
 } from '@mui/material';
 import {
     TableChart as TableIcon,
@@ -19,10 +20,11 @@ import {
     Today as TodayIcon,
     PictureAsPdf as PdfIcon,
     EventAvailable as FreePeriodIcon,
+    SwapHoriz as SwapIcon,
 } from '@mui/icons-material';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { useGetTeacherTimetable, useGetTeacherFreePeriods } from '../../../queries/Timetable';
+import { useGetTeacherTimetable, useGetTeacherFreePeriods, useGetSubstitutesForDate } from '../../../queries/Timetable';
 import TokenService from '../../../queries/token/tokenService';
 import type { TimetableEntry } from '../../../types/timetable.types';
 
@@ -33,12 +35,17 @@ const MyTimetable = () => {
     const teacherId = TokenService.getUserId() || '';
     const [viewMode, setViewMode] = useState<ViewMode>('table');
 
+    // Get today's date for substitutes
+    const todayDate = new Date().toISOString().split('T')[0];
+
     const { data: timetableData, isLoading, error } = useGetTeacherTimetable(schoolId, teacherId);
     const { data: freePeriodsData } = useGetTeacherFreePeriods(schoolId, teacherId);
+    const { data: substitutesData } = useGetSubstitutesForDate(schoolId, todayDate);
 
     const config = timetableData?.data?.config;
     const entries = timetableData?.data?.entries || [];
     const freePeriods = freePeriodsData?.data || { teacherId: '', freePeriods: {} as Record<string, any[]> };
+    const substitutes = substitutesData?.data || [];
 
     // Get regular periods only
     const regularPeriods = useMemo(() => {
@@ -54,11 +61,33 @@ const MyTimetable = () => {
         return map;
     }, [entries]);
 
+    // Substitutes where this teacher's periods are being covered by someone else
+    const coveredPeriodsMap = useMemo(() => {
+        const map: Record<string, any> = {};
+        substitutes.forEach((sub: any) => {
+            if (sub.originalTeacherId === teacherId) {
+                map[`${sub.entry?.dayOfWeek}-${sub.entry?.periodNumber}`] = sub;
+            }
+        });
+        return map;
+    }, [substitutes, teacherId]);
+
+    // Substitutes where this teacher is covering for someone else
+    const substituteAssignmentsMap = useMemo(() => {
+        const map: Record<string, any> = {};
+        substitutes.forEach((sub: any) => {
+            if (sub.substituteTeacherId === teacherId) {
+                map[`${sub.entry?.dayOfWeek}-${sub.entry?.periodNumber}`] = sub;
+            }
+        });
+        return map;
+    }, [substitutes, teacherId]);
+
     // Get today's day
     const today = new Date();
     const todayDayName = today.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
 
-    // Today's schedule
+    // Today's schedule (including substitute assignments as extra periods)
     const todaySchedule = useMemo(() => {
         return entries.filter((e: TimetableEntry) => e.dayOfWeek === todayDayName)
             .sort((a: TimetableEntry, b: TimetableEntry) => a.periodNumber - b.periodNumber);
@@ -278,14 +307,70 @@ const MyTimetable = () => {
                                         </td>
                                         {config.workingDays.map((day) => {
                                             const entry = entryMap[`${day}-${period.periodNumber}`];
+                                            const isCovered = coveredPeriodsMap[`${day}-${period.periodNumber}`] && day === todayDayName;
+                                            const substituteAssignment = substituteAssignmentsMap[`${day}-${period.periodNumber}`];
+                                            const isSubstituting = !!substituteAssignment && day === todayDayName;
+
                                             return (
                                                 <td
                                                     key={`${day}-${period.periodNumber}`}
                                                     style={{
-                                                        backgroundColor: entry ? getEntryColor(entry) : (day === todayDayName ? '#e3f2fd' : 'white'),
+                                                        backgroundColor: isSubstituting
+                                                            ? '#fff3e0' // Orange for substitute assignment
+                                                            : isCovered
+                                                                ? '#f5f5f5' // Grey for covered period
+                                                                : (entry ? getEntryColor(entry) : (day === todayDayName ? '#e3f2fd' : 'white')),
+                                                        border: isSubstituting
+                                                            ? '2px solid #ff9800'
+                                                            : isCovered
+                                                                ? '2px dashed #bdbdbd'
+                                                                : undefined,
+                                                        opacity: isCovered && !isSubstituting ? 0.6 : 1,
                                                     }}
                                                 >
-                                                    {entry ? (
+                                                    {/* Show substitute assignment (covering for someone) */}
+                                                    {isSubstituting ? (
+                                                        <Tooltip title={`Covering for: ${substituteAssignment.originalTeacher?.name}`}>
+                                                            <Box>
+                                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                                                                    <SwapIcon sx={{ fontSize: 14, color: 'warning.main' }} />
+                                                                    <Typography variant="body2" fontWeight={600} color="warning.dark">
+                                                                        {substituteAssignment.entry?.subject?.name || 'Cover'}
+                                                                    </Typography>
+                                                                </Box>
+                                                                <Typography variant="caption" color="warning.dark">
+                                                                    {substituteAssignment.entry?.classId} {substituteAssignment.entry?.sectionId}
+                                                                </Typography>
+                                                                <Chip
+                                                                    label="Substitute"
+                                                                    size="small"
+                                                                    color="warning"
+                                                                    sx={{ fontSize: '0.6rem', height: 16, mt: 0.5 }}
+                                                                />
+                                                            </Box>
+                                                        </Tooltip>
+                                                    ) : isCovered ? (
+                                                        /* Period is covered by someone else */
+                                                        <Tooltip title={`Covered by: ${coveredPeriodsMap[`${day}-${period.periodNumber}`]?.substituteTeacher?.name}`}>
+                                                            <Box>
+                                                                <Typography
+                                                                    variant="body2"
+                                                                    color="text.disabled"
+                                                                    sx={{ textDecoration: 'line-through' }}
+                                                                >
+                                                                    {entry?.subject?.name || entry?.subjectId}
+                                                                </Typography>
+                                                                <Typography variant="caption" color="text.disabled">
+                                                                    {entry?.class?.name} {entry?.class?.section}
+                                                                </Typography>
+                                                                <Chip
+                                                                    label="Covered"
+                                                                    size="small"
+                                                                    sx={{ fontSize: '0.6rem', height: 16, mt: 0.5, bgcolor: '#e0e0e0' }}
+                                                                />
+                                                            </Box>
+                                                        </Tooltip>
+                                                    ) : entry ? (
                                                         <Box>
                                                             <Typography variant="body2" fontWeight={600}>
                                                                 {entry.subject?.name || entry.subjectId}

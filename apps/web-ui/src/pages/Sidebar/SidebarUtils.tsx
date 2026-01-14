@@ -224,6 +224,18 @@ export const TeachersMenuItems: SideBarMenuItemType[] = [
     isExpandable: false,
   },
   {
+    name: "Exam",
+    icon: <MuiIcons.Assessment />,
+    isExpandable: true,
+    subItems: [
+      {
+        name: "Marks Entry",
+        icon: <MuiIcons.Create />,
+        path: "/teacher/exam/marks",
+      },
+    ],
+  },
+  {
     name: "Profile",
     icon: <MuiIcons.AccountCircle />,
     path: "/teacher/profile",
@@ -284,6 +296,12 @@ export const StudentsMenuItems: SideBarMenuItemType[] = [
     name: "My Timetable",
     icon: <MuiIcons.Schedule />,
     path: "/student/timetable",
+    isExpandable: false,
+  },
+  {
+    name: "My Exams",
+    icon: <MuiIcons.Assignment />,
+    path: "/student/exam/my-exams",
     isExpandable: false,
   },
   {

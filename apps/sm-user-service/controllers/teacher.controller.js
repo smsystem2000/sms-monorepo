@@ -139,7 +139,7 @@ const createTeacher = async (req, res) => {
     }
 };
 
-// Get teacher by teacherId
+// Get teacher by teacherId (with aggregated details)
 const getTeacherById = async (req, res) => {
     try {
         const { schoolId, id: teacherId } = req.params;
@@ -162,10 +162,45 @@ const getTeacherById = async (req, res) => {
             });
         }
 
+        // Convert to object to add additional fields
+        const teacherObj = teacher.toObject();
+
+        // Fetch school details for schoolName
+        const school = await School.findOne({ schoolId });
+        if (school) {
+            teacherObj.schoolName = school.schoolName;
+        }
+
+        // Fetch subject details for subjectNames
+        if (teacher.subjects && teacher.subjects.length > 0) {
+            const schoolDb = getSchoolDbConnection(schoolDbName);
+            const { SubjectSchema: subjectSchema } = require("@sms/shared");
+            const Subject = schoolDb.model("Subject", subjectSchema);
+
+            const subjects = await Subject.find({
+                subjectId: { $in: teacher.subjects }
+            }).select("subjectId name");
+
+            teacherObj.subjectNames = subjects.map(s => s.name);
+        }
+
+        // Fetch class details for classNames
+        if (teacher.classes && teacher.classes.length > 0) {
+            const schoolDb = getSchoolDbConnection(schoolDbName);
+            const { ClassSchema: classSchema } = require("@sms/shared");
+            const Class = schoolDb.model("Class", classSchema);
+
+            const classes = await Class.find({
+                classId: { $in: teacher.classes }
+            }).select("classId name");
+
+            teacherObj.classNames = classes.map(c => c.name);
+        }
+
         return res.status(200).json({
             success: true,
             message: "Teacher fetched successfully",
-            data: teacher,
+            data: teacherObj,
         });
     } catch (error) {
         console.error("Error fetching teacher:", error);

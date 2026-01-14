@@ -5,6 +5,8 @@ const {
     ExamScheduleSchema: examScheduleSchema,
     TimetableConfigSchema: timetableConfigSchema,
     TimetableEntrySchema: timetableEntrySchema,
+    ExamTypeSchema: examTypeSchema,
+    ExamTermSchema: examTermSchema,
 } = require("@sms/shared");
 
 const getModels = (schoolDbName) => {
@@ -14,6 +16,8 @@ const getModels = (schoolDbName) => {
         ExamSchedule: schoolDb.model("ExamSchedule", examScheduleSchema),
         TimetableConfig: schoolDb.model("TimetableConfig", timetableConfigSchema),
         TimetableEntry: schoolDb.model("TimetableEntry", timetableEntrySchema),
+        ExamType: schoolDb.model("ExamType", examTypeSchema),
+        ExamTerm: schoolDb.model("ExamTerm", examTermSchema),
     };
 };
 
@@ -179,18 +183,79 @@ const scheduleExamSubject = async (req, res) => {
             }
         }
 
+        // Calculate durationMinutes from startTime and endTime
+        // Time format could be "HH:mm" (24hr) or "HH:mm AM/PM" (12hr)
+        const parseTimeToMinutes = (timeStr) => {
+            if (!timeStr) return 0;
+            // Remove extra spaces
+            timeStr = timeStr.trim();
+
+            // Check if it's 12-hour format (contains AM/PM)
+            const isPM = timeStr.toLowerCase().includes('pm');
+            const isAM = timeStr.toLowerCase().includes('am');
+
+            // Remove AM/PM suffix
+            let cleanTime = timeStr.replace(/\s*(am|pm)/gi, '').trim();
+
+            const [h, m] = cleanTime.split(':').map(Number);
+            let hours = h;
+
+            // Convert 12-hour to 24-hour
+            if (isPM && hours < 12) hours += 12;
+            if (isAM && hours === 12) hours = 0;
+
+            return hours * 60 + (m || 0);
+        };
+
+        // Normalize time to 24-hour format for storage
+        const normalizeTime = (timeStr) => {
+            if (!timeStr) return '';
+            const minutes = parseTimeToMinutes(timeStr);
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+        };
+
+        const startMinutes = parseTimeToMinutes(scheduleData.startTime);
+        const endMinutes = parseTimeToMinutes(scheduleData.endTime);
+        const durationMinutes = endMinutes - startMinutes;
+
+        if (durationMinutes <= 0) {
+            return res.status(400).json({ success: false, message: "End time must be after start time" });
+        }
+
+        // Normalize times to 24-hour format
+        const normalizedStartTime = normalizeTime(scheduleData.startTime);
+        const normalizedEndTime = normalizeTime(scheduleData.endTime);
+
         // Create or Update Schedule
         let schedule;
+        const schedulePayload = {
+            ...scheduleData,
+            schoolId,
+            startTime: normalizedStartTime,
+            endTime: normalizedEndTime,
+            durationMinutes,
+            // Handle optional roomId - don't include if empty
+            ...(scheduleData.roomId ? { roomId: scheduleData.roomId } : {})
+        };
+
+        // Remove empty roomId if present
+        if (!schedulePayload.roomId || schedulePayload.roomId === '') {
+            delete schedulePayload.roomId;
+        }
+
         if (scheduleData._id) {
-            schedule = await ExamSchedule.findByIdAndUpdate(scheduleData._id, scheduleData, { new: true });
+            schedule = await ExamSchedule.findByIdAndUpdate(scheduleData._id, schedulePayload, { new: true });
         } else {
-            schedule = new ExamSchedule({ ...scheduleData, schoolId });
+            schedule = new ExamSchedule(schedulePayload);
             await schedule.save();
         }
 
         res.status(200).json({ success: true, data: schedule, message: "Exam scheduled successfully" });
 
     } catch (error) {
+        console.error("Schedule exam error:", error);
         res.status(500).json({ success: false, message: error.message });
     }
 };

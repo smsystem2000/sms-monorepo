@@ -61,9 +61,11 @@ import CardMembership from "@mui/icons-material/CardMembership";
 import Delete from "@mui/icons-material/Delete";
 import Save from "@mui/icons-material/Save";
 import Edit from "@mui/icons-material/Edit";
+import { Create } from "@mui/icons-material";
 
 export const MuiIcons = {
   Dashboard,
+  Create,
   AccountCircle,
   ExpandLessIcon,
   CheckCircle,

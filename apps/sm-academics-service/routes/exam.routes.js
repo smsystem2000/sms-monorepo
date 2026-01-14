@@ -16,7 +16,7 @@ const {
 } = require('../controllers/exam.controller');
 
 const {
-    generateAdmitCard, getAdmitCard, bulkGenerateAdmitCards
+    generateAdmitCard, getAdmitCard, bulkGenerateAdmitCards, getExamRegistrations
 } = require('../controllers/exam-registration.controller');
 
 const {
@@ -148,6 +148,12 @@ router.get(
     '/registration/:examId/student/:studentId',
     Authenticated,
     getAdmitCard
+);
+router.get(
+    '/registration/:examId/list',
+    Authenticated,
+    authorizeRoles('sch_admin', 'teacher'),
+    getExamRegistrations
 );
 
 // ==========================================

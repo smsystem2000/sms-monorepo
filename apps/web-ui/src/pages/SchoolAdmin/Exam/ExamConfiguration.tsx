@@ -57,12 +57,12 @@ const ExamConfiguration = () => {
     };
 
     return (
-        <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">Exam Configuration</h1>
-            </div>
+        <Box sx={{ p: { xs: 2, sm: 3 } }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h5" fontWeight={600}>Exam Configuration</Typography>
+            </Box>
 
-            <Card className="mb-6">
+            <Card sx={{ mb: 3 }}>
                 <Tabs value={activeTab} onChange={handleTabChange} aria-label="exam configuration tabs">
                     <Tab label="Exam Terms" />
                     <Tab label="Exam Types" />
@@ -70,16 +70,16 @@ const ExamConfiguration = () => {
                 </Tabs>
             </Card>
 
-            <div role="tabpanel" hidden={activeTab !== 0}>
+            <Box role="tabpanel" hidden={activeTab !== 0}>
                 {activeTab === 0 && <ExamTermsTab schoolId={schoolId} />}
-            </div>
-            <div role="tabpanel" hidden={activeTab !== 1}>
+            </Box>
+            <Box role="tabpanel" hidden={activeTab !== 1}>
                 {activeTab === 1 && <ExamTypesTab schoolId={schoolId} />}
-            </div>
-            <div role="tabpanel" hidden={activeTab !== 2}>
+            </Box>
+            <Box role="tabpanel" hidden={activeTab !== 2}>
                 {activeTab === 2 && <GradingSystemsTab schoolId={schoolId} />}
-            </div>
-        </div>
+            </Box>
+        </Box>
     );
 };
 
@@ -164,13 +164,13 @@ const ExamTermsTab = ({ schoolId }: { schoolId: string }) => {
     };
 
     return (
-        <Card className="p-6">
-            <div className="flex justify-between items-center mb-4">
-                <Typography variant="h6">Academic Terms</Typography>
+        <Card sx={{ p: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h6" fontWeight={600}>Academic Terms</Typography>
                 <Button variant="contained" startIcon={<AddCircleIcon />} onClick={() => setOpen(true)}>
                     Add Term
                 </Button>
-            </div>
+            </Box>
 
             <TableContainer component={Paper} elevation={0} variant="outlined">
                 <Table>
@@ -294,13 +294,13 @@ const ExamTypesTab = ({ schoolId }: { schoolId: string }) => {
     };
 
     return (
-        <Card className="p-6">
-            <div className="flex justify-between items-center mb-4">
-                <Typography variant="h6">Exam Types</Typography>
+        <Card sx={{ p: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h6" fontWeight={600}>Exam Types</Typography>
                 <Button variant="contained" startIcon={<AddCircleIcon />} onClick={() => setOpen(true)}>
                     Add Exam Type
                 </Button>
-            </div>
+            </Box>
 
             <TableContainer component={Paper} elevation={0} variant="outlined">
                 <Table>
@@ -429,13 +429,13 @@ const GradingSystemsTab = ({ schoolId }: { schoolId: string }) => {
     };
 
     return (
-        <Card className="p-6">
-            <div className="flex justify-between items-center mb-4">
-                <Typography variant="h6">Grading Systems</Typography>
+        <Card sx={{ p: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h6" fontWeight={600}>Grading Systems</Typography>
                 <Button variant="contained" startIcon={<AddCircleIcon />} onClick={() => setOpen(true)}>
                     Add System
                 </Button>
-            </div>
+            </Box>
 
             <TableContainer component={Paper} elevation={0} variant="outlined">
                 <Table>

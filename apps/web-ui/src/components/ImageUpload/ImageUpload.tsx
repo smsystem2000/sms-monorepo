@@ -200,7 +200,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                         ref={uploadRef}
                         fileName={fileName}
                         folder={folder}
-                        onError={handleUploadError}
+                        onError={handleUploadError as unknown as (err: Error) => void}
                         onSuccess={handleUploadSuccess}
                         onUploadStart={handleUploadStart}
                         style={{ display: 'none' }}
@@ -315,7 +315,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                     ref={uploadRef}
                     fileName={fileName}
                     folder={folder}
-                    onError={handleUploadError}
+                    onError={handleUploadError as unknown as (err: Error) => void}
                     onSuccess={handleUploadSuccess}
                     onUploadStart={handleUploadStart}
                     style={{ display: 'none' }}

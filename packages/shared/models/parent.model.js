@@ -56,6 +56,12 @@ const parentSchema = new mongoose.Schema(
             enum: ["active", "inactive"],
             default: "active",
         },
+        profileImage: {
+            type: String,
+        },
+        signature: {
+            type: String,
+        },
     },
     {
         timestamps: true,

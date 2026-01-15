@@ -23,6 +23,7 @@
     "exceljs": "^4.4.0",
     "file-saver": "^2.0.5",
     "framer-motion": "^12.24.10",
+    "imagekitio-react": "^4.3.0",
     "jspdf": "^4.0.0",
     "jspdf-autotable": "^5.0.7",
     "jwt-decode": "^4.0.0",

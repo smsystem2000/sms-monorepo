@@ -111,6 +111,7 @@ export interface SchoolAdmin {
     phone?: string;
     phoneNumber?: string;
     contactNumber?: string;
+    profileImage?: string;
     status: "active" | "inactive";
     createdAt?: string;
     updatedAt?: string;
@@ -129,6 +130,7 @@ export interface UpdateSchoolAdminPayload {
     email?: string;
     password?: string;
     contactNumber?: string;
+    profileImage?: string;
     status?: "active" | "inactive";
 }
 
@@ -150,6 +152,7 @@ export interface Teacher {
     department?: string;
     status: "active" | "inactive";
     profileImage?: string;
+    signature?: string;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -165,6 +168,7 @@ export interface CreateTeacherPayload {
     sections?: string[];
     status?: "active" | "inactive";
     profileImage?: string;
+    signature?: string;
 }
 
 export interface UpdateTeacherPayload {
@@ -178,6 +182,7 @@ export interface UpdateTeacherPayload {
     sections?: string[];
     status?: "active" | "inactive";
     profileImage?: string;
+    signature?: string;
 }
 
 // Student Types
@@ -202,6 +207,7 @@ export interface Student {
     address?: string;
     status: "active" | "inactive";
     profileImage?: string;
+    signature?: string;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -221,6 +227,7 @@ export interface CreateStudentPayload {
     address?: string;
     status?: "active" | "inactive";
     profileImage?: string;
+    signature?: string;
 }
 
 export interface UpdateStudentPayload {
@@ -238,9 +245,9 @@ export interface UpdateStudentPayload {
     address?: string;
     status?: "active" | "inactive";
     profileImage?: string;
+    signature?: string;
 }
 
-// Parent Types
 export interface Parent {
     parentId: string;
     schoolId: string;
@@ -253,6 +260,8 @@ export interface Parent {
     occupation?: string;
     address?: string;
     status: "active" | "inactive";
+    profileImage?: string;
+    signature?: string;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -268,6 +277,8 @@ export interface CreateParentPayload {
     occupation?: string;
     address?: string;
     status?: "active" | "inactive";
+    profileImage?: string;
+    signature?: string;
 }
 
 export interface UpdateParentPayload {
@@ -281,6 +292,8 @@ export interface UpdateParentPayload {
     occupation?: string;
     address?: string;
     status?: "active" | "inactive";
+    profileImage?: string;
+    signature?: string;
 }
 
 // Query Filter Types
@@ -306,12 +319,13 @@ export interface Request {
     userType: "teacher" | "student" | "parent" | "sch_admin";
     userId: string;
     userName: string;
-    requestType: "email_change" | "phone_change" | "general";
+    requestType: "email_change" | "phone_change" | "signature_change" | "general";
     oldValue?: string;
     newValue?: string;
     message: string;
     status: "pending" | "approved" | "rejected";
     adminReply?: string;
+    attachmentUrl?: string;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -320,10 +334,11 @@ export interface CreateRequestPayload {
     userType: "teacher" | "student" | "parent" | "sch_admin";
     userId: string;
     userName: string;
-    requestType: "email_change" | "phone_change" | "general";
+    requestType: "email_change" | "phone_change" | "signature_change" | "general";
     oldValue?: string;
     newValue?: string;
     message: string;
+    attachmentUrl?: string;
 }
 
 export interface UpdateRequestPayload {

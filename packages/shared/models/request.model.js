@@ -22,7 +22,7 @@ const requestSchema = new mongoose.Schema(
         },
         requestType: {
             type: String,
-            enum: ["email_change", "phone_change", "general"],
+            enum: ["email_change", "phone_change", "signature_change", "general"],
             required: true,
         },
         oldValue: {
@@ -43,6 +43,10 @@ const requestSchema = new mongoose.Schema(
             default: "pending",
         },
         adminReply: {
+            type: String,
+            default: "",
+        },
+        attachmentUrl: {
             type: String,
             default: "",
         },

@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
-const { connectDB } = require('./configs/db');
+const { connectDB, ensureDbConnection } = require('./configs/db');
 const timetableRoutes = require('./routes/timetable.routes');
 const examRoutes = require('./routes/exam.routes');
 
@@ -32,6 +32,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// MongoDB auto-reconnection middleware - ensures DB is connected before processing requests
+app.use(ensureDbConnection);
 
 // Timetable routes (school-specific)
 app.use('/api/academics/school/:schoolId', timetableRoutes);

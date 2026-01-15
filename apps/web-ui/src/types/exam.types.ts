@@ -214,4 +214,14 @@ export interface AdmitCardData {
     rollNumber?: string;
     classId?: string;
     sectionId?: string;
+    // Additional fields for admit card display
+    studentName?: string;
+    fatherName?: string;
+    dob?: string;
+    profileImage?: string;
+    studentPhoto?: string;
+    signature?: string;
+    schoolName?: string;
+    schoolAddress?: string;
+    schoolLogo?: string;
 }

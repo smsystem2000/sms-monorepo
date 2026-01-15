@@ -161,25 +161,43 @@ const bulkGenerateAdmitCards = async (req, res) => {
 const getExamRegistrations = async (req, res) => {
     try {
         const { schoolId, examId } = req.params;
-        const { classId } = req.query;
+        const { classId, search } = req.query;
 
         const schoolDbName = await getSchoolDbName(schoolId);
         const schoolDb = getSchoolDbConnection(schoolDbName);
         const { StudentExamRegistration } = getModels(schoolDbName);
 
         // Get Student model for name lookup
-        const { StudentSchema } = require("@sms/shared");
+        const { StudentSchema, ParentSchema } = require("@sms/shared");
         const Student = schoolDb.model("Student", StudentSchema);
 
         const query = { schoolId, examId };
         if (classId) query.classId = classId;
 
-        const registrations = await StudentExamRegistration.find(query).lean();
+        let registrations = await StudentExamRegistration.find(query).lean();
 
-        // Enrich with student names
-        const studentIds = registrations.map(r => r.studentId);
-        const students = await Student.find({ studentId: { $in: studentIds } })
-            .select('studentId firstName lastName email class section rollNumber')
+        // Get all student IDs
+        let studentIds = registrations.map(r => r.studentId);
+
+        // If search query provided, filter students by name or ID
+        let studentQuery = { studentId: { $in: studentIds } };
+        if (search && search.trim()) {
+            const searchRegex = new RegExp(search.trim(), 'i');
+            studentQuery = {
+                studentId: { $in: studentIds },
+                $or: [
+                    { studentId: searchRegex },
+                    { firstName: searchRegex },
+                    { lastName: searchRegex },
+                    { email: searchRegex },
+                    { rollNumber: searchRegex }
+                ]
+            };
+        }
+
+        // Enrich with student names and additional details
+        const students = await Student.find(studentQuery)
+            .select('studentId firstName lastName email class section rollNumber profileImage dateOfBirth signature parentId fatherName')
             .lean();
 
         const studentMap = {};
@@ -187,10 +205,22 @@ const getExamRegistrations = async (req, res) => {
             studentMap[s.studentId] = s;
         });
 
-        const enrichedRegistrations = registrations.map(r => ({
-            ...r,
-            student: studentMap[r.studentId] || null
-        }));
+        // If search was applied, filter registrations to only include matching students
+        let enrichedRegistrations;
+        if (search && search.trim()) {
+            // Only return registrations for students that matched the search
+            enrichedRegistrations = registrations
+                .filter(r => studentMap[r.studentId])
+                .map(r => ({
+                    ...r,
+                    student: studentMap[r.studentId]
+                }));
+        } else {
+            enrichedRegistrations = registrations.map(r => ({
+                ...r,
+                student: studentMap[r.studentId] || null
+            }));
+        }
 
         res.status(200).json({
             success: true,

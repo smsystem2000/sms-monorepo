@@ -92,5 +92,38 @@ const ensureDbConnection = async (req, res, next) => {
     }
 };
 
+// Cache for school database connections
+const schoolDbConnections = {};
+
+/**
+ * Get a connection to a specific school's database
+ * @param {string} schoolDbName - The school database name (e.g., 'school-db-myschool')
+ * @returns {mongoose.Connection} - A mongoose connection to the school's database
+ */
+const getSchoolDbConnection = (schoolDbName) => {
+    if (!schoolDbName) {
+        throw new Error("schoolDbName is required");
+    }
+
+    // Return cached connection if exists
+    if (schoolDbConnections[schoolDbName]) {
+        return schoolDbConnections[schoolDbName];
+    }
+
+    // Ensure main connection exists
+    if (mongoose.connection.readyState !== 1) {
+        throw new Error("Main MongoDB connection is not established. Call connectDB() first.");
+    }
+
+    // Create a new connection to the school's database using useDb()
+    // useDb() shares the same connection pool as the main connection
+    const schoolConnection = mongoose.connection.useDb(schoolDbName, { useCache: true });
+
+    // Cache the connection
+    schoolDbConnections[schoolDbName] = schoolConnection;
+
+    return schoolConnection;
+};
+
 // Export the connection functions
-module.exports = { connectDB, ensureDbConnection };
+module.exports = { connectDB, getSchoolDbConnection, ensureDbConnection };

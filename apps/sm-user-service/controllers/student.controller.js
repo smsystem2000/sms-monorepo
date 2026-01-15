@@ -207,10 +207,12 @@ const getStudentById = async (req, res) => {
         // Convert to object to add additional fields
         const studentObj = student.toObject();
 
-        // Fetch school details for schoolName
+        // Fetch school details for schoolName, schoolAddress, schoolLogo
         const school = await School.findOne({ schoolId });
         if (school) {
             studentObj.schoolName = school.schoolName;
+            studentObj.schoolAddress = school.schoolAddress || '';
+            studentObj.schoolLogo = school.schoolLogo || '';
         }
 
         // Fetch class details for className and sectionName

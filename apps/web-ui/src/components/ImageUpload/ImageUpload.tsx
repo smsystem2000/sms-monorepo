@@ -200,7 +200,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                         ref={uploadRef}
                         fileName={fileName}
                         folder={folder}
-                        onError={handleUploadError as unknown as (err: Error) => void}
+                        // @ts-ignore - IKUpload types are incompatible with React event handlers
+                        onError={handleUploadError}
                         onSuccess={handleUploadSuccess}
                         onUploadStart={handleUploadStart}
                         style={{ display: 'none' }}
@@ -315,7 +316,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                     ref={uploadRef}
                     fileName={fileName}
                     folder={folder}
-                    onError={handleUploadError as unknown as (err: Error) => void}
+                    // @ts-ignore - IKUpload types are incompatible with React event handlers
+                    onError={handleUploadError}
                     onSuccess={handleUploadSuccess}
                     onUploadStart={handleUploadStart}
                     style={{ display: 'none' }}

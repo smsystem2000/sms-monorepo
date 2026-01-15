@@ -412,6 +412,11 @@ const ExamDetailView = ({ schoolId, exam, onBack }: { schoolId: string, exam: Ex
         return sectionInfo?.name || sectionId;
     };
 
+    const getSubjectName = (subjectId: string): string => {
+        const subjectInfo = subjects?.data?.find((s: any) => s._id === subjectId || s.subjectId === subjectId);
+        return subjectInfo?.name || subjectId;
+    };
+
     const [formData, setFormData] = useState<CreateScheduleRequest>({
         examId: exam.examId,
         classId: '',
@@ -577,8 +582,8 @@ const ExamDetailView = ({ schoolId, exam, onBack }: { schoolId: string, exam: Ex
                                 <TableRow key={sch._id}>
                                     <TableCell>{new Date(sch.date).toLocaleDateString()}</TableCell>
                                     <TableCell>{sch.startTime} - {sch.endTime}</TableCell>
-                                    <TableCell>{sch.classId}</TableCell>
-                                    <TableCell>{sch.subjectId}</TableCell>
+                                    <TableCell>{getClassName(sch.classId)}</TableCell>
+                                    <TableCell>{getSubjectName(sch.subjectId)}</TableCell>
                                     <TableCell>{sch.roomId?.name || 'N/A'}</TableCell>
                                     <TableCell>
                                         {sch.invigilators?.map((inv: any) => `${inv.firstName} ${inv.lastName}`).join(', ')}
@@ -1009,6 +1014,45 @@ const ExamDetailView = ({ schoolId, exam, onBack }: { schoolId: string, exam: Ex
                                         </Box>
                                     </Grid>
                                 </Grid>
+
+                                {/* Exam Schedule Table */}
+                                {schedule?.data && schedule.data.length > 0 && (
+                                    <Box sx={{ mt: 3 }}>
+                                        <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1, color: 'primary.main' }}>
+                                            Exam Schedule
+                                        </Typography>
+                                        <TableContainer component={Paper} variant="outlined">
+                                            <Table size="small">
+                                                <TableHead>
+                                                    <TableRow sx={{ bgcolor: '#f5f5f5' }}>
+                                                        <TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
+                                                        <TableCell sx={{ fontWeight: 600 }}>Time</TableCell>
+                                                        <TableCell sx={{ fontWeight: 600 }}>Subject</TableCell>
+                                                        <TableCell sx={{ fontWeight: 600, textAlign: 'center' }}>Invigilator Sign</TableCell>
+                                                    </TableRow>
+                                                </TableHead>
+                                                <TableBody>
+                                                    {schedule.data.map((sch: any, index: number) => (
+                                                        <TableRow key={sch._id || index}>
+                                                            <TableCell>
+                                                                {new Date(sch.date).toLocaleDateString('en-IN', {
+                                                                    day: 'numeric',
+                                                                    month: 'short',
+                                                                    year: 'numeric'
+                                                                })}
+                                                            </TableCell>
+                                                            <TableCell>{sch.startTime} - {sch.endTime}</TableCell>
+                                                            <TableCell>{getSubjectName(sch.subjectId)}</TableCell>
+                                                            <TableCell sx={{ textAlign: 'center', minWidth: 100 }}>
+                                                                <Box sx={{ borderBottom: '1px solid #ccc', width: 80, mx: 'auto', height: 20 }} />
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        </TableContainer>
+                                    </Box>
+                                )}
 
                                 <Divider sx={{ my: 3 }} />
 

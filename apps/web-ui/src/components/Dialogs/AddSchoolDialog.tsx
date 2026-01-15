@@ -20,6 +20,8 @@ import {
 import { Close as CloseIcon } from '@mui/icons-material';
 import { useCreateSchool, useUpdateSchool } from '../../queries/School';
 import type { CreateSchoolPayload, School } from '../../types';
+import { ImageUpload } from '../ImageUpload';
+import { IMAGEKIT_FOLDERS } from '../../utils/imagekit';
 
 interface SchoolDialogProps {
     open: boolean;
@@ -216,12 +218,19 @@ const SchoolDialog: React.FC<SchoolDialogProps> = ({ open, onClose, editData }) 
                             fullWidth
                         />
 
-                        <TextField
-                            name="schoolLogo"
-                            label="School Logo URL"
-                            value={formData.schoolLogo}
-                            onChange={handleChange}
-                            fullWidth
+                        <ImageUpload
+                            folder={IMAGEKIT_FOLDERS.SCHOOL_LOGOS}
+                            fileName={isEditMode && editData ? `${editData.schoolId}_logo` : `new_school_logo_${Date.now()}`}
+                            currentImage={formData.schoolLogo}
+                            label="School Logo"
+                            authEndpoint="admin"
+                            size="medium"
+                            onUploadSuccess={(result) => {
+                                setFormData(prev => ({ ...prev, schoolLogo: result.url }));
+                            }}
+                            onRemove={() => {
+                                setFormData(prev => ({ ...prev, schoolLogo: '' }));
+                            }}
                         />
 
                         <TextField

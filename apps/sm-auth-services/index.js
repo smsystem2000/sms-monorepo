@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
-const { connectDB } = require('./configs/db');
+const { connectDB, ensureDbConnection } = require('./configs/db');
 const authRoutes = require('./routes/auth.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 
@@ -33,6 +33,9 @@ app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// MongoDB auto-reconnection middleware - ensures DB is connected before processing requests
+app.use(ensureDbConnection);
 
 // Routes
 app.use('/api/auth', authRoutes);

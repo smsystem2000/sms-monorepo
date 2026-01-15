@@ -20,6 +20,8 @@ import { Close as CloseIcon } from '@mui/icons-material';
 import { useCreateSchoolAdmin, useUpdateSchoolAdmin } from '../../queries/SchoolAdmin';
 import { useGetSchools } from '../../queries/School';
 import type { CreateSchoolAdminPayload, SchoolAdmin } from '../../types';
+import { ImageUpload } from '../ImageUpload';
+import { IMAGEKIT_FOLDERS } from '../../utils/imagekit';
 
 interface SchoolAdminDialogProps {
     open: boolean;
@@ -30,12 +32,13 @@ interface SchoolAdminDialogProps {
 const SchoolAdminDialog: React.FC<SchoolAdminDialogProps> = ({ open, onClose, editData }) => {
     const isEditMode = !!editData;
 
-    const [formData, setFormData] = useState<CreateSchoolAdminPayload>({
+    const [formData, setFormData] = useState<CreateSchoolAdminPayload & { profileImage?: string }>({
         username: '',
         email: '',
         password: '',
         schoolId: '',
         contactNumber: '',
+        profileImage: '',
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -55,6 +58,7 @@ const SchoolAdminDialog: React.FC<SchoolAdminDialogProps> = ({ open, onClose, ed
                 password: '',
                 schoolId: editData.schoolId || '',
                 contactNumber: editData.contactNumber || '',
+                profileImage: editData.profileImage || '',
             });
         } else {
             setFormData({
@@ -63,6 +67,7 @@ const SchoolAdminDialog: React.FC<SchoolAdminDialogProps> = ({ open, onClose, ed
                 password: '',
                 schoolId: '',
                 contactNumber: '',
+                profileImage: '',
             });
         }
     }, [editData]);
@@ -117,6 +122,7 @@ const SchoolAdminDialog: React.FC<SchoolAdminDialogProps> = ({ open, onClose, ed
                     username: formData.username,
                     email: formData.email,
                     contactNumber: formData.contactNumber,
+                    profileImage: formData.profileImage,
                 };
                 if (formData.password) {
                     updatePayload.password = formData.password;
@@ -141,6 +147,7 @@ const SchoolAdminDialog: React.FC<SchoolAdminDialogProps> = ({ open, onClose, ed
             password: '',
             schoolId: '',
             contactNumber: '',
+            profileImage: '',
         });
         setErrors({});
         createMutation.reset();
@@ -230,6 +237,22 @@ const SchoolAdminDialog: React.FC<SchoolAdminDialogProps> = ({ open, onClose, ed
                             value={formData.contactNumber}
                             onChange={handleChange}
                             fullWidth
+                        />
+
+                        <ImageUpload
+                            folder={IMAGEKIT_FOLDERS.PROFILE_IMAGES}
+                            fileName={isEditMode && editData ? `${editData.userId}_profile` : `new_admin_profile_${Date.now()}`}
+                            currentImage={formData.profileImage}
+                            label="Profile Image"
+                            authEndpoint="admin"
+                            variant="avatar"
+                            size="medium"
+                            onUploadSuccess={(result) => {
+                                setFormData(prev => ({ ...prev, profileImage: result.url }));
+                            }}
+                            onRemove={() => {
+                                setFormData(prev => ({ ...prev, profileImage: '' }));
+                            }}
                         />
                     </Box>
                 </DialogContent>

@@ -123,6 +123,7 @@ const StudentProfile = () => {
 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap', position: 'relative', zIndex: 1 }}>
                     <Avatar
+                        src={student?.profileImage || undefined}
                         sx={{
                             width: 100,
                             height: 100,
@@ -131,7 +132,7 @@ const StudentProfile = () => {
                             border: '3px solid rgba(255,255,255,0.5)'
                         }}
                     >
-                        {getInitials()}
+                        {!student?.profileImage && getInitials()}
                     </Avatar>
                     <Box sx={{ flex: 1 }}>
                         <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5 }}>

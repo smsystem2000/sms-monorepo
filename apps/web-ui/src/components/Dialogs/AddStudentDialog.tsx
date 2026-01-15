@@ -15,12 +15,16 @@ import {
     Select,
     MenuItem,
     Autocomplete,
+    Typography,
+    Divider,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { useCreateStudent, useUpdateStudent } from '../../queries/Student';
 import { searchParentsApi } from '../../queries/Parent';
 import { useGetClasses } from '../../queries/Class';
 import type { CreateStudentPayload, Student, Parent, Class, Section } from '../../types';
+import { ImageUpload } from '../ImageUpload';
+import { IMAGEKIT_FOLDERS } from '../../utils/imagekit';
 
 interface StudentDialogProps {
     open: boolean;
@@ -56,6 +60,8 @@ const StudentDialog: React.FC<StudentDialogProps> = ({ open, onClose, schoolId, 
         address: '',
         parentId: '',
         status: 'active',
+        profileImage: '',
+        signature: '',
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -115,6 +121,8 @@ const StudentDialog: React.FC<StudentDialogProps> = ({ open, onClose, schoolId, 
                 address: editData.address || '',
                 parentId: editData.parentId || '',
                 status: editData.status || 'active',
+                profileImage: editData.profileImage || '',
+                signature: editData.signature || '',
             });
             // Set placeholder parent for edit mode
             if (editData.parentId) {
@@ -146,6 +154,8 @@ const StudentDialog: React.FC<StudentDialogProps> = ({ open, onClose, schoolId, 
                 address: '',
                 parentId: '',
                 status: 'active',
+                profileImage: '',
+                signature: '',
             });
             setSelectedParent(null);
         }
@@ -219,6 +229,8 @@ const StudentDialog: React.FC<StudentDialogProps> = ({ open, onClose, schoolId, 
             address: '',
             parentId: '',
             status: 'active',
+            profileImage: '',
+            signature: '',
         });
         setErrors({});
         setSelectedParent(null);
@@ -372,6 +384,49 @@ const StudentDialog: React.FC<StudentDialogProps> = ({ open, onClose, schoolId, 
                                     <MenuItem value="inactive">Inactive</MenuItem>
                                 </Select>
                             </FormControl>
+                        </Grid>
+
+                        {/* Profile Image and Signature */}
+                        <Grid size={{ xs: 12 }}>
+                            <Divider sx={{ my: 1 }} />
+                            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
+                                Images
+                            </Typography>
+                        </Grid>
+
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                            <ImageUpload
+                                folder={IMAGEKIT_FOLDERS.PROFILE_IMAGES}
+                                fileName={isEditMode && editData ? `${editData.studentId}_profile` : `new_student_profile_${Date.now()}`}
+                                currentImage={formData.profileImage}
+                                label="Profile Image"
+                                authEndpoint="school"
+                                variant="avatar"
+                                size="medium"
+                                onUploadSuccess={(result) => {
+                                    setFormData(prev => ({ ...prev, profileImage: result.url }));
+                                }}
+                                onRemove={() => {
+                                    setFormData(prev => ({ ...prev, profileImage: '' }));
+                                }}
+                            />
+                        </Grid>
+
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                            <ImageUpload
+                                folder={IMAGEKIT_FOLDERS.SIGNATURES}
+                                fileName={isEditMode && editData ? `${editData.studentId}_signature` : `new_student_signature_${Date.now()}`}
+                                currentImage={formData.signature}
+                                label="Signature"
+                                authEndpoint="school"
+                                size="small"
+                                onUploadSuccess={(result) => {
+                                    setFormData(prev => ({ ...prev, signature: result.url }));
+                                }}
+                                onRemove={() => {
+                                    setFormData(prev => ({ ...prev, signature: '' }));
+                                }}
+                            />
                         </Grid>
                     </Grid>
                 </DialogContent>

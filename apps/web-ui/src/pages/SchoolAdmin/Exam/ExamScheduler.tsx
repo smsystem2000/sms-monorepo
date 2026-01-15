@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
     Box,
     Card,
@@ -27,14 +27,24 @@ import {
     Alert,
     Snackbar,
     Tabs,
-    Tab
+    Tab,
+    Avatar,
+    Divider,
+    CircularProgress,
+    Skeleton,
+    InputAdornment
 } from '@mui/material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CardMembershipIcon from '@mui/icons-material/CardMembership';
 import DeleteIcon from '@mui/icons-material/Delete';
-import EventIcon from '@mui/icons-material/Event';
 import ClassIcon from '@mui/icons-material/Class';
+import DownloadIcon from '@mui/icons-material/Download';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import SchoolIcon from '@mui/icons-material/School';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import SearchIcon from '@mui/icons-material/Search';
+import { pdf } from '@react-pdf/renderer';
 import { useAuth } from '../../../context/AuthContext';
 import {
     useCreateExam,
@@ -47,11 +57,12 @@ import {
     useBulkGenerateAdmitCards,
     useGetExamRegistrations
 } from '../../../queries/Exam';
-// Corrected imports
 import { useGetClasses } from '../../../queries/Class';
 import { useGetSubjects } from '../../../queries/Subject';
 import { useGetTeachers } from '../../../queries/Teacher';
 import { useGetAllRooms } from '../../../queries/Timetable';
+import { useGetSchoolById } from '../../../queries/School';
+import { AdmitCardPDF } from '../../../components/PDFLayouts';
 
 import type { CreateExamRequest, CreateScheduleRequest, Exam } from '../../../types/exam.types';
 
@@ -64,7 +75,6 @@ const ExamScheduler = () => {
     const schoolId = user?.schoolId || '';
     const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
 
-    // If no exam selected, show list. If selected, show details/scheduler.
     return (
         <Box sx={{ p: { xs: 2, sm: 3 } }}>
             {selectedExam ? (
@@ -84,14 +94,13 @@ const ExamScheduler = () => {
 };
 
 // ==========================================
-// VIEW 1: EXAM LIST
+// VIEW 1: EXAM LIST - Redesigned with gradient cards
 // ==========================================
 
 const ExamListView = ({ schoolId, onSelect }: { schoolId: string, onSelect: (exam: Exam) => void }) => {
     const [open, setOpen] = useState(false);
     const { data: exams, isLoading } = useGetExams(schoolId);
 
-    // Data for Dropdowns
     const { data: terms } = useGetExamTerms(schoolId);
     const { data: types } = useGetExamTypes(schoolId);
     const { data: gradingSystems } = useGetGradingSystems(schoolId);
@@ -122,6 +131,22 @@ const ExamListView = ({ schoolId, onSelect }: { schoolId: string, onSelect: (exa
         });
     };
 
+    // Get status color and gradient
+    const getStatusStyles = (status: string) => {
+        switch (status) {
+            case 'published':
+                return { gradient: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)', color: 'success' };
+            case 'ongoing':
+                return { gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'primary' };
+            case 'scheduled':
+                return { gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'secondary' };
+            case 'draft':
+                return { gradient: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)', color: 'warning' };
+            default:
+                return { gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'default' };
+        }
+    };
+
     return (
         <>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -132,57 +157,87 @@ const ExamListView = ({ schoolId, onSelect }: { schoolId: string, onSelect: (exa
             </Box>
 
             {isLoading ? (
-                <Typography>Loading...</Typography>
+                <Grid container spacing={3}>
+                    {[1, 2, 3].map((i) => (
+                        <Grid key={i} size={{ xs: 12, md: 6, lg: 4 }}>
+                            <Skeleton variant="rounded" height={180} />
+                        </Grid>
+                    ))}
+                </Grid>
             ) : !exams?.data?.length ? (
                 <Paper sx={{ p: 4, textAlign: 'center' }}>
                     <Typography color="text.secondary">No exams created yet. Click "Create New Exam" to get started.</Typography>
                 </Paper>
             ) : (
                 <Grid container spacing={3}>
-                    {exams.data.map((exam: any) => (
-                        <Grid key={exam._id} size={{ xs: 12, md: 6, lg: 4 }}>
-                            <Card
-                                sx={{
-                                    p: 3,
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    '&:hover': {
-                                        boxShadow: 6,
-                                        transform: 'translateY(-2px)'
-                                    }
-                                }}
-                                onClick={() => onSelect(exam)}
-                            >
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                    <Box>
-                                        <Typography variant="h6" fontWeight={600}>{exam.name}</Typography>
-                                        <Typography variant="body2" color="text.secondary">
-                                            {exam.typeId?.name || 'N/A'} | {exam.termId?.name || 'N/A'}
-                                        </Typography>
+                    {exams.data.map((exam: any) => {
+                        const styles = getStatusStyles(exam.status);
+                        return (
+                            <Grid key={exam._id} size={{ xs: 12, md: 6, lg: 4 }}>
+                                <Card
+                                    sx={{
+                                        borderRadius: 3,
+                                        overflow: 'hidden',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.3s ease',
+                                        '&:hover': {
+                                            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                                            transform: 'translateY(-4px)'
+                                        }
+                                    }}
+                                    onClick={() => onSelect(exam)}
+                                >
+                                    {/* Card Header with gradient */}
+                                    <Box
+                                        sx={{
+                                            background: styles.gradient,
+                                            color: 'black',
+                                            p: 2,
+                                        }}
+                                    >
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                            <Box>
+                                                <Typography variant="h6" fontWeight={600} sx={{ mb: 0.5 }}>
+                                                    {exam.name}
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                                                    {exam.typeId?.name || 'Exam'} | {exam.termId?.name || 'Term'}
+                                                </Typography>
+                                            </Box>
+                                            <Chip
+                                                label={exam.status}
+                                                size="small"
+                                                sx={{
+                                                    bgcolor: 'rgba(255,255,255,0.2)',
+                                                    color: 'black',
+                                                    fontWeight: 600,
+                                                    textTransform: 'capitalize'
+                                                }}
+                                            />
+                                        </Box>
                                     </Box>
-                                    <Chip
-                                        label={exam.status}
-                                        color={exam.status === 'published' ? 'success' : exam.status === 'draft' ? 'warning' : 'default'}
-                                        size="small"
-                                    />
-                                </Box>
-                                <Box sx={{ mt: 2 }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                        <EventIcon fontSize="small" color="action" />
-                                        <Typography variant="body2" color="text.secondary">
-                                            {new Date(exam.startDate).toLocaleDateString()} - {new Date(exam.endDate).toLocaleDateString()}
-                                        </Typography>
+
+                                    {/* Card Body */}
+                                    <Box sx={{ p: 2 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                                            <CalendarMonthIcon fontSize="small" color="action" />
+                                            <Typography variant="body2" color="text.secondary">
+                                                {new Date(exam.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                                {' - '}
+                                                {new Date(exam.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <ClassIcon fontSize="small" color="action" />
+                                            <Typography variant="body2" color="text.secondary">
+                                                {exam.classes?.length || 0} Classes Participating
+                                            </Typography>
+                                        </Box>
                                     </Box>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <ClassIcon fontSize="small" color="action" />
-                                        <Typography variant="body2" color="text.secondary">
-                                            {exam.classes?.length || 0} Classes Participating
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            </Card>
-                        </Grid>
-                    ))}
+                                </Card>
+                            </Grid>
+                        );
+                    })}
                 </Grid>
             )}
 
@@ -301,33 +356,60 @@ const ExamDetailView = ({ schoolId, exam, onBack }: { schoolId: string, exam: Ex
     const [tabValue, setTabValue] = useState(0);
     const [open, setOpen] = useState(false);
     const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+    const [admitCardDialogOpen, setAdmitCardDialogOpen] = useState(false);
+    const [selectedStudent, setSelectedStudent] = useState<any>(null);
+    const [downloading, setDownloading] = useState(false);
+    const [searchInput, setSearchInput] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' }>({
         open: false,
         message: '',
         severity: 'info'
     });
 
+    // Debounce search input
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchInput);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchInput]);
+
     const { data: schedule, isLoading } = useGetExamSchedule(schoolId, exam.examId);
-    const { data: registrations, isLoading: regLoading } = useGetExamRegistrations(schoolId, exam.examId);
+    const { data: registrations, isLoading: regLoading } = useGetExamRegistrations(schoolId, exam.examId, undefined, debouncedSearch);
+    const { data: schoolData } = useGetSchoolById(schoolId);
     const scheduleExam = useScheduleExam(schoolId);
     const generateAdmitCards = useBulkGenerateAdmitCards(schoolId);
 
-    // Lists for Dropdowns
     const { data: subjects } = useGetSubjects(schoolId);
     const { data: teachers } = useGetTeachers(schoolId);
     const { data: rooms } = useGetAllRooms(schoolId);
-
-    // We need class list limited to exam.classes
     const { data: allClasses } = useGetClasses(schoolId);
     const examClasses = allClasses?.data?.filter((c: any) => exam.classes.includes(c.classId)) || [];
 
-    // Helper function to resolve class and section names
+    // School details
+    const school = schoolData?.data;
+    const schoolName = school?.schoolName || 'School Name';
+    const schoolAddress = school?.schoolAddress || '';
+    const schoolLogo = school?.schoolLogo || '';
+
     const getClassSectionName = (classId: string, sectionId: string): string => {
         const classInfo = allClasses?.data?.find((c: any) => c.classId === classId);
         const className = classInfo?.name || classId;
         const sectionInfo = classInfo?.sections?.find((s: any) => s.sectionId === sectionId || s._id === sectionId);
         const sectionName = sectionInfo?.name || sectionId;
         return `${className} - ${sectionName}`;
+    };
+
+    const getClassName = (classId: string): string => {
+        const classInfo = allClasses?.data?.find((c: any) => c.classId === classId);
+        return classInfo?.name || classId;
+    };
+
+    const getSectionName = (classId: string, sectionId: string): string => {
+        const classInfo = allClasses?.data?.find((c: any) => c.classId === classId);
+        const sectionInfo = classInfo?.sections?.find((s: any) => s.sectionId === sectionId || s._id === sectionId);
+        return sectionInfo?.name || sectionId;
     };
 
     const [formData, setFormData] = useState<CreateScheduleRequest>({
@@ -352,7 +434,6 @@ const ExamDetailView = ({ schoolId, exam, onBack }: { schoolId: string, exam: Ex
             onSuccess: () => {
                 setOpen(false);
                 setSnackbar({ open: true, message: 'Exam scheduled successfully!', severity: 'success' });
-                // Reset (partially)
                 setFormData(prev => ({ ...prev, subjectId: '', startTime: '', endTime: '' }));
             },
             onError: (err: any) => {
@@ -389,11 +470,62 @@ const ExamDetailView = ({ schoolId, exam, onBack }: { schoolId: string, exam: Ex
         setSnackbar(prev => ({ ...prev, open: false }));
     };
 
-    const handleViewAdmitCard = (url: string) => {
-        if (url) {
-            window.open(url, '_blank');
-        } else {
-            setSnackbar({ open: true, message: 'Admit card URL not available', severity: 'info' });
+    const handleViewAdmitCard = (reg: any) => {
+        setSelectedStudent(reg);
+        setAdmitCardDialogOpen(true);
+    };
+
+    const handleDownloadPDF = async () => {
+        if (!selectedStudent) return;
+
+        setDownloading(true);
+        try {
+            const studentName = `${selectedStudent.student?.firstName || ''} ${selectedStudent.student?.lastName || ''}`.trim() || 'Student';
+            const fatherName = selectedStudent.student?.fatherName || selectedStudent.student?.parentName || 'Father Name';
+            const className = getClassName(selectedStudent.classId);
+            const sectionName = getSectionName(selectedStudent.classId, selectedStudent.sectionId);
+            const dob = selectedStudent.student?.dateOfBirth
+                ? new Date(selectedStudent.student.dateOfBirth).toLocaleDateString()
+                : 'N/A';
+
+            const blob = await pdf(
+                <AdmitCardPDF
+                    studentName={studentName}
+                    fatherName={fatherName}
+                    rollNumber={selectedStudent.rollNumber || 'N/A'}
+                    studentId={selectedStudent.studentId}
+                    className={className}
+                    sectionName={sectionName}
+                    dob={dob}
+                    schoolName={schoolName}
+                    schoolAddress={schoolAddress}
+                    schoolLogo={schoolLogo}
+                    studentPhoto={selectedStudent.student?.profileImage || ''}
+                    studentSignature={selectedStudent.student?.signature || ''}
+                    examName={exam.name}
+                    examType={typeof exam.typeId === 'object' ? exam.typeId?.name : 'Examination'}
+                    examTerm={typeof exam.termId === 'object' ? exam.termId?.name : 'Term'}
+                    academicYear={exam.academicYear || '2025-2026'}
+                    startDate={exam.startDate}
+                    endDate={exam.endDate}
+                />
+            ).toBlob();
+
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `AdmitCard_${selectedStudent.studentId}_${exam.name.replace(/\s+/g, '_')}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            setSnackbar({ open: true, message: 'Admit card downloaded successfully!', severity: 'success' });
+        } catch (error) {
+            console.error('PDF generation error:', error);
+            setSnackbar({ open: true, message: 'Failed to generate PDF', severity: 'error' });
+        } finally {
+            setDownloading(false);
         }
     };
 
@@ -465,66 +597,129 @@ const ExamDetailView = ({ schoolId, exam, onBack }: { schoolId: string, exam: Ex
             )}
 
             {tabValue === 1 && (
-                <TableContainer component={Paper} elevation={0} variant="outlined">
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Student Name</TableCell>
-                                <TableCell>Class</TableCell>
-                                <TableCell>Roll No</TableCell>
-                                <TableCell>Status</TableCell>
-                                <TableCell>Eligible</TableCell>
-                                <TableCell>Actions</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {regLoading ? (
-                                <TableRow><TableCell colSpan={6} align="center">Loading...</TableCell></TableRow>
-                            ) : registrations?.data?.map((reg: any) => (
-                                <TableRow key={reg._id}>
-                                    <TableCell>
-                                        <Typography variant="body2" fontWeight={500}>
-                                            {reg.student?.firstName} {reg.student?.lastName}
-                                        </Typography>
-                                        <Typography variant="caption" color="text.secondary">
-                                            {reg.studentId}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>{getClassSectionName(reg.classId, reg.sectionId)}</TableCell>
-                                    <TableCell>{reg.rollNumber}</TableCell>
-                                    <TableCell>
-                                        <Chip
-                                            label={reg.admitCardGenerated ? "Generated" : "Pending"}
-                                            color={reg.admitCardGenerated ? "success" : "warning"}
-                                            size="small"
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        <Chip
-                                            label={reg.isEligible ? "Yes" : "No"}
-                                            color={reg.isEligible ? "primary" : "error"}
-                                            size="small"
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        {reg.admitCardGenerated && (
-                                            <Button
-                                                size="small"
-                                                variant="outlined"
-                                                onClick={() => handleViewAdmitCard(reg.admitCardUrl)}
+                <Box>
+                    {/* Search Input */}
+                    <Box sx={{ mb: 3 }}>
+                        <TextField
+                            placeholder="Search by name, ID, or roll number..."
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                            size="small"
+                            sx={{ width: { xs: '100%', sm: 350 } }}
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon color="action" />
+                                    </InputAdornment>
+                                ),
+                            }}
+                        />
+                    </Box>
+                    <Grid container spacing={3}>
+                        {regLoading ? (
+                            [1, 2, 3, 4].map((i) => (
+                                <Grid key={i} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                                    <Skeleton variant="rounded" height={180} />
+                                </Grid>
+                            ))
+                        ) : registrations?.data?.length === 0 ? (
+                            <Grid size={{ xs: 12 }}>
+                                <Paper sx={{ p: 4, textAlign: 'center' }}>
+                                    <Typography color="text.secondary">No admit cards generated yet</Typography>
+                                </Paper>
+                            </Grid>
+                        ) : (
+                            registrations?.data?.map((reg: any) => (
+                                <Grid key={reg._id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                                    <Card
+                                        sx={{
+                                            borderRadius: 3,
+                                            overflow: 'hidden',
+                                            transition: 'all 0.3s ease',
+                                            '&:hover': {
+                                                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                                                transform: 'translateY(-4px)'
+                                            }
+                                        }}
+                                    >
+                                        {/* Card Header */}
+                                        <Box
+                                            sx={{
+                                                background: reg.admitCardGenerated
+                                                    ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                                                    : 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)',
+                                                color: reg.admitCardGenerated ? 'white' : 'text.secondary',
+                                                p: 2,
+                                                textAlign: 'center'
+                                            }}
+                                        >
+                                            <Avatar
+                                                src={reg.student?.profileImage}
+                                                sx={{
+                                                    width: 60,
+                                                    height: 60,
+                                                    mx: 'auto',
+                                                    mb: 1,
+                                                    border: '3px solid rgba(255,255,255,0.3)'
+                                                }}
                                             >
-                                                View PDF
-                                            </Button>
-                                        )}
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                            {registrations?.data?.length === 0 && (
-                                <TableRow><TableCell colSpan={6} align="center">No admit cards generated yet</TableCell></TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+                                                {reg.student?.firstName?.[0] || 'S'}
+                                            </Avatar>
+                                            <Typography variant="subtitle1" fontWeight={600}>
+                                                {reg.student?.firstName} {reg.student?.lastName}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                                                {reg.studentId}
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Card Body */}
+                                        <Box sx={{ p: 2 }}>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                                <Typography variant="caption" color="text.secondary">Class</Typography>
+                                                <Typography variant="body2" fontWeight={500}>
+                                                    {getClassSectionName(reg.classId, reg.sectionId)}
+                                                </Typography>
+                                            </Box>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                                <Typography variant="caption" color="text.secondary">Roll No</Typography>
+                                                <Typography variant="body2" fontWeight={500}>{reg.rollNumber}</Typography>
+                                            </Box>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                                                <Chip
+                                                    label={reg.admitCardGenerated ? "Generated" : "Pending"}
+                                                    color={reg.admitCardGenerated ? "success" : "warning"}
+                                                    size="small"
+                                                />
+                                                <Chip
+                                                    label={reg.isEligible ? "Eligible" : "Not Eligible"}
+                                                    color={reg.isEligible ? "primary" : "error"}
+                                                    size="small"
+                                                    variant="outlined"
+                                                />
+                                            </Box>
+
+                                            {reg.admitCardGenerated && (
+                                                <Button
+                                                    fullWidth
+                                                    variant="contained"
+                                                    startIcon={<VisibilityIcon />}
+                                                    onClick={() => handleViewAdmitCard(reg)}
+                                                    sx={{
+                                                        borderRadius: 2,
+                                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                                    }}
+                                                >
+                                                    View Admit Card
+                                                </Button>
+                                            )}
+                                        </Box>
+                                    </Card>
+                                </Grid>
+                            ))
+                        )}
+                    </Grid>
+                </Box>
             )}
 
             {/* Schedule Dialog */}
@@ -686,18 +881,182 @@ const ExamDetailView = ({ schoolId, exam, onBack }: { schoolId: string, exam: Ex
                 </DialogActions>
             </Dialog>
 
-            {/* Snackbar for notifications */}
+            {/* Admit Card View Dialog */}
+            <Dialog
+                open={admitCardDialogOpen}
+                onClose={() => setAdmitCardDialogOpen(false)}
+                maxWidth="md"
+                fullWidth
+                PaperProps={{ sx: { borderRadius: 2, mt: 10 } }}
+            >
+                <DialogContent sx={{ p: 0 }}>
+                    {selectedStudent && (
+                        <Box sx={{ border: '3px solid #1976d2', borderRadius: 1, overflow: 'hidden' }}>
+                            {/* Header */}
+                            <Box
+                                sx={{
+                                    background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+                                    color: 'white',
+                                    p: 2,
+                                    textAlign: 'center',
+                                }}
+                            >
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mb: 1 }}>
+                                    {schoolLogo ? (
+                                        <Avatar src={schoolLogo} sx={{ width: 60, height: 60, bgcolor: 'white' }} />
+                                    ) : (
+                                        <Avatar sx={{ width: 60, height: 60, bgcolor: 'rgba(255,255,255,0.2)' }}>
+                                            <SchoolIcon sx={{ fontSize: 35 }} />
+                                        </Avatar>
+                                    )}
+                                    <Box>
+                                        <Typography variant="h5" fontWeight={700}>{schoolName}</Typography>
+                                        <Typography variant="body2" sx={{ opacity: 0.9 }}>{schoolAddress}</Typography>
+                                    </Box>
+                                </Box>
+                                <Chip
+                                    label="E - ADMIT CARD"
+                                    sx={{ mt: 1, bgcolor: '#ff9800', color: 'white', fontWeight: 700, fontSize: '1rem', py: 2 }}
+                                />
+                            </Box>
+
+                            {/* Exam Title */}
+                            <Box sx={{ bgcolor: '#e3f2fd', p: 1.5, textAlign: 'center', borderBottom: '2px solid #1976d2' }}>
+                                <Typography variant="h6" fontWeight={600} color="primary.dark">
+                                    {exam.name} - {typeof exam.typeId === 'object' ? exam.typeId?.name : 'Examination'}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Academic Year: {exam.academicYear || '2025-2026'} | {typeof exam.termId === 'object' ? exam.termId?.name : 'Term'}
+                                </Typography>
+                            </Box>
+
+                            {/* Content */}
+                            <Box sx={{ p: 3 }}>
+                                <Grid container spacing={3}>
+                                    <Grid size={{ xs: 12, md: 8 }}>
+                                        <TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
+                                            <Table size="small">
+                                                <TableBody>
+                                                    <TableRow>
+                                                        <TableCell sx={{ bgcolor: '#f5f5f5', fontWeight: 600, width: '40%' }}>Student Name</TableCell>
+                                                        <TableCell>{selectedStudent.student?.firstName} {selectedStudent.student?.lastName}</TableCell>
+                                                    </TableRow>
+                                                    <TableRow>
+                                                        <TableCell sx={{ bgcolor: '#f5f5f5', fontWeight: 600 }}>Father's Name</TableCell>
+                                                        <TableCell>{selectedStudent.student?.fatherName || selectedStudent.student?.parentName || 'N/A'}</TableCell>
+                                                    </TableRow>
+                                                    <TableRow>
+                                                        <TableCell sx={{ bgcolor: '#f5f5f5', fontWeight: 600 }}>Roll Number</TableCell>
+                                                        <TableCell>{selectedStudent.rollNumber}</TableCell>
+                                                    </TableRow>
+                                                    <TableRow>
+                                                        <TableCell sx={{ bgcolor: '#f5f5f5', fontWeight: 600 }}>Student ID</TableCell>
+                                                        <TableCell>{selectedStudent.studentId}</TableCell>
+                                                    </TableRow>
+                                                    <TableRow>
+                                                        <TableCell sx={{ bgcolor: '#f5f5f5', fontWeight: 600 }}>Class / Section</TableCell>
+                                                        <TableCell>{getClassSectionName(selectedStudent.classId, selectedStudent.sectionId)}</TableCell>
+                                                    </TableRow>
+                                                    <TableRow>
+                                                        <TableCell sx={{ bgcolor: '#f5f5f5', fontWeight: 600 }}>Date of Birth</TableCell>
+                                                        <TableCell>
+                                                            {selectedStudent.student?.dateOfBirth
+                                                                ? new Date(selectedStudent.student.dateOfBirth).toLocaleDateString()
+                                                                : 'N/A'}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                </TableBody>
+                                            </Table>
+                                        </TableContainer>
+
+                                        <Paper variant="outlined" sx={{ p: 2, bgcolor: '#fff3e0' }}>
+                                            <Typography variant="subtitle2" fontWeight={600} color="warning.dark">Examination Period</Typography>
+                                            <Typography variant="body1" fontWeight={500}>
+                                                {new Date(exam.startDate).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                                {' '} to {' '}
+                                                {new Date(exam.endDate).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                            </Typography>
+                                        </Paper>
+                                    </Grid>
+
+                                    <Grid size={{ xs: 12, md: 4 }}>
+                                        <Box sx={{ textAlign: 'center' }}>
+                                            <Paper
+                                                variant="outlined"
+                                                sx={{ width: 130, height: 160, mx: 'auto', mb: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}
+                                            >
+                                                {selectedStudent.student?.profileImage ? (
+                                                    <Box component="img" src={selectedStudent.student.profileImage} alt="Student Photo" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                ) : (
+                                                    <Avatar sx={{ width: 100, height: 100, bgcolor: 'grey.300' }}>
+                                                        {selectedStudent.student?.firstName?.[0] || 'S'}
+                                                    </Avatar>
+                                                )}
+                                            </Paper>
+                                            <Typography variant="caption" color="text.secondary">Photograph of Candidate</Typography>
+
+                                            <Paper
+                                                variant="outlined"
+                                                sx={{ width: 130, height: 50, mx: 'auto', mt: 2, mb: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                            >
+                                                {selectedStudent.student?.signature ? (
+                                                    <Box component="img" src={selectedStudent.student.signature} alt="Signature" sx={{ maxWidth: '100%', maxHeight: '100%' }} />
+                                                ) : (
+                                                    <Typography variant="caption" color="text.disabled">Signature</Typography>
+                                                )}
+                                            </Paper>
+                                            <Typography variant="caption" color="text.secondary">Signature of Candidate</Typography>
+                                        </Box>
+                                    </Grid>
+                                </Grid>
+
+                                <Divider sx={{ my: 3 }} />
+
+                                <Grid container spacing={2}>
+                                    {['Class Teacher\'s Signature', 'Candidate\'s Signature', 'Principal\'s Signature'].map((label) => (
+                                        <Grid key={label} size={{ xs: 4 }}>
+                                            <Box sx={{ textAlign: 'center' }}>
+                                                <Box sx={{ borderBottom: '1px solid #333', height: 40, mb: 1 }} />
+                                                <Typography variant="caption" fontWeight={500}>{label}</Typography>
+                                            </Box>
+                                        </Grid>
+                                    ))}
+                                </Grid>
+
+                                <Paper sx={{ mt: 3, p: 2, bgcolor: '#fafafa' }} variant="outlined">
+                                    <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Important Instructions:</Typography>
+                                    <Typography variant="caption" component="ul" sx={{ pl: 2, m: 0 }}>
+                                        <li>Bring this admit card to the examination hall along with a valid ID proof.</li>
+                                        <li>Reach the examination center at least 30 minutes before the scheduled time.</li>
+                                        <li>Electronic devices including mobile phones are strictly prohibited.</li>
+                                        <li>Any attempt to use unfair means will result in disqualification.</li>
+                                    </Typography>
+                                </Paper>
+                            </Box>
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions sx={{ p: 2, borderTop: '1px solid #e0e0e0' }}>
+                    <Button onClick={() => setAdmitCardDialogOpen(false)}>Close</Button>
+                    <Button
+                        variant="contained"
+                        startIcon={downloading ? <CircularProgress size={16} color="inherit" /> : <DownloadIcon />}
+                        onClick={handleDownloadPDF}
+                        disabled={downloading}
+                    >
+                        {downloading ? 'Generating...' : 'Download PDF'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Snackbar */}
             <Snackbar
                 open={snackbar.open}
                 autoHideDuration={6000}
                 onClose={handleCloseSnackbar}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             >
-                <Alert
-                    onClose={handleCloseSnackbar}
-                    severity={snackbar.severity}
-                    sx={{ width: '100%' }}
-                >
+                <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
                     {snackbar.message}
                 </Alert>
             </Snackbar>

@@ -7,6 +7,8 @@ const {
     TimetableEntrySchema: timetableEntrySchema,
     ExamTypeSchema: examTypeSchema,
     ExamTermSchema: examTermSchema,
+    TeacherSchema: teacherSchema,
+    RoomSchema: roomSchema,
 } = require("@sms/shared");
 
 const getModels = (schoolDbName) => {
@@ -18,6 +20,8 @@ const getModels = (schoolDbName) => {
         TimetableEntry: schoolDb.model("TimetableEntry", timetableEntrySchema),
         ExamType: schoolDb.model("ExamType", examTypeSchema),
         ExamTerm: schoolDb.model("ExamTerm", examTermSchema),
+        Teacher: schoolDb.model("Teacher", teacherSchema),
+        Room: schoolDb.model("Room", roomSchema),
     };
 };
 
@@ -266,17 +270,35 @@ const getExamSchedule = async (req, res) => {
         const { classId } = req.query;
 
         const schoolDbName = await getSchoolDbName(schoolId);
-        const { ExamSchedule } = getModels(schoolDbName);
+        // Get all models to ensure Teacher and Room schemas are registered
+        const { ExamSchedule, Teacher, Room } = getModels(schoolDbName);
 
         const query = { schoolId, examId };
         if (classId) query.classId = classId;
 
-        const schedule = await ExamSchedule.find(query)
+        const schedules = await ExamSchedule.find(query)
             .sort({ date: 1, startTime: 1 })
-            .populate('invigilators', 'firstName lastName email')
-            .populate('roomId', 'name');
+            .populate('roomId', 'name')
+            .lean();
 
-        res.status(200).json({ success: true, data: schedule });
+        // Manually lookup invigilators by teacherId (not ObjectId)
+        const allInvigilatorIds = [...new Set(schedules.flatMap(s => s.invigilators || []))];
+        const teachers = await Teacher.find({ teacherId: { $in: allInvigilatorIds } })
+            .select('teacherId firstName lastName email')
+            .lean();
+
+        const teacherMap = {};
+        teachers.forEach(t => {
+            teacherMap[t.teacherId] = t;
+        });
+
+        // Enrich schedules with teacher details
+        const enrichedSchedules = schedules.map(s => ({
+            ...s,
+            invigilators: (s.invigilators || []).map(id => teacherMap[id] || { teacherId: id })
+        }));
+
+        res.status(200).json({ success: true, data: enrichedSchedules });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

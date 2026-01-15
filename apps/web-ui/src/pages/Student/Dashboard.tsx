@@ -100,7 +100,7 @@ const StudentDashboard: React.FC = () => {
                         icon={<ResultsIcon sx={{ fontSize: 28 }} />}
                         color="#8b5cf6"
                         bgColor="#f5f3ff"
-                        to="/student/exams"
+                        to="/student/exam/my-exams"
                     />
                 </Grid>
 
@@ -113,7 +113,7 @@ const StudentDashboard: React.FC = () => {
                         icon={<LeaveIcon sx={{ fontSize: 28 }} />}
                         color="#f59e0b"
                         bgColor="#fffbeb"
-                        to="/student/apply-leave"
+                        to="/student/leave/apply"
                     />
                 </Grid>
 

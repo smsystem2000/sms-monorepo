@@ -30,6 +30,12 @@ export const SuperAdminMenuItems: SideBarMenuItemType[] = [
     path: "/super-admin/users",
     isExpandable: false,
   },
+  {
+    name: "Menus",
+    icon: <MuiIcons.ListAlt />,
+    path: "/super-admin/menus",
+    isExpandable: false,
+  },
 ];
 
 // School Admin Menu Items

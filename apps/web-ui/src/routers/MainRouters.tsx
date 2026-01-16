@@ -56,6 +56,7 @@ import ParentDashboard from "../pages/Parent/Dashboard";
 
 // Student Timetable
 import { MyTimetable as StudentTimetable } from "../pages/Student/Timetable";
+import Menus from "../pages/SuperAdmin/Menus";
 
 const MainRouters = () => {
   return (
@@ -69,6 +70,7 @@ const MainRouters = () => {
         <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
         <Route path="/super-admin/schools" element={<Schools />} />
         <Route path="/super-admin/users" element={<Users />} />
+        <Route path="/super-admin/menus" element={<Menus />} />
       </Route>
 
       {/* School Admin Routes */}

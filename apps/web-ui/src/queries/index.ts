@@ -35,6 +35,9 @@ export * from "./Subject";
 
 // Attendance (User Service)
 export * from "./Attendance";
+// Menus (Platform Service)
+export * from "./Menus";
+
 export { default as useApi } from "./useApi";
 
 

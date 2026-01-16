@@ -19,7 +19,6 @@ interface SidebarProps {
 
 const Sidebar = ({ isOpen, onClose, role, onLogout }: SidebarProps) => {
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
-  const [selectedItem, setSelectedItem] = useState<string | null>('Dashboard');
   const [closingItem, setClosingItem] = useState<string | null>(null);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [hoveredSubItem, setHoveredSubItem] = useState<string | null>(null);
@@ -42,12 +41,22 @@ const Sidebar = ({ isOpen, onClose, role, onLogout }: SidebarProps) => {
     setExpandedItem(prev => prev === itemName ? null : itemName);
   };
 
-  const handleSelect = (itemName: string) => {
-    setSelectedItem(itemName);
+  const handleSelect = () => {
     // Close sidebar on mobile
     if (window.innerWidth <= 900) {
       onClose();
     }
+  };
+
+  // Check if menu item is selected based on current URL
+  const isMenuItemSelected = (item: SideBarMenuItemType): boolean => {
+    if (item.path && location.pathname === item.path) {
+      return true;
+    }
+    if (item.subItems) {
+      return item.subItems.some(subItem => location.pathname === subItem.path);
+    }
+    return false;
   };
 
   // Updated menu items logic based on role
@@ -174,7 +183,7 @@ const Sidebar = ({ isOpen, onClose, role, onLogout }: SidebarProps) => {
           }}>
             {menuItems.map((item: SideBarMenuItemType) => {
               const isHovered = hoveredItem === item.name;
-              const isSelected = selectedItem === item.name;
+              const isSelected = isMenuItemSelected(item);
               const backgroundColor = isSelected
                 ? '#3b82f6'
                 : isHovered
@@ -189,12 +198,12 @@ const Sidebar = ({ isOpen, onClose, role, onLogout }: SidebarProps) => {
                         handleToggle(item.name);
                       } else {
                         navigate(item.path!);
-                        handleSelect(item.name);
+                        handleSelect();
                       }
                     }}
                     onMouseEnter={() => setHoveredItem(item.name)}
                     onMouseLeave={() => setHoveredItem(null)}
-                    className={`menu-item ${selectedItem === item.name ? 'selected' : ''}`}
+                    className={`menu-item ${isSelected ? 'selected' : ''}`}
                     style={{
                       background: backgroundColor,
                       borderRadius: '8px',
@@ -274,7 +283,7 @@ const Sidebar = ({ isOpen, onClose, role, onLogout }: SidebarProps) => {
                               if (subItem.path) {
                                 navigate(subItem.path);
                               }
-                              handleSelect(item.name);
+                              handleSelect();
                             }}
                             onMouseEnter={() => setHoveredSubItem(`${item.name}-${subItem.name}`)}
                             onMouseLeave={() => setHoveredSubItem(null)}

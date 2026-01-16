@@ -1,110 +1,146 @@
 import React from 'react';
-import { Box, Typography, Grid, Paper } from '@mui/material';
+import { Box, Typography, Grid, CircularProgress, Alert } from '@mui/material';
 import {
     School as ClassIcon,
     Assessment as ResultsIcon,
-    EventNote as AttendanceIcon,
+    EventNote as LeaveIcon,
+    CheckCircle as AttendanceIcon,
+    Schedule as TimetableIcon,
+    Help as RequestIcon,
 } from '@mui/icons-material';
-import AttendanceWidget from './components/AttendanceWidget';
+import DashboardCard from '../../components/Dashboard/DashboardCard';
 import TokenService from '../../queries/token/tokenService';
+import { useGetSimpleStudentAttendance } from '../../queries/Attendance';
 
 const StudentDashboard: React.FC = () => {
     const userName = TokenService.getUserName() || 'Student';
+    const schoolId = TokenService.getSchoolId() || '';
+    const studentId = TokenService.getStudentId() || '';
+
+    // Get last 30 days of attendance
+    const endDate = new Date().toISOString().split('T')[0];
+    const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    const { data: attendanceData, isLoading, error } = useGetSimpleStudentAttendance(
+        schoolId,
+        studentId,
+        startDate,
+        endDate
+    );
+
+    const summary = attendanceData?.data?.summary;
+    const totalDays = summary?.total || 0;
+    const presentDays = (summary?.present || 0) + (summary?.late || 0);
+    const percentage = totalDays > 0 ? ((presentDays / totalDays) * 100).toFixed(0) : 0;
 
     return (
         <Box sx={{ p: { xs: 2, sm: 3 } }}>
             {/* Welcome Header */}
             <Box sx={{ mb: 3 }}>
-                <Typography variant="h4" fontWeight={600} gutterBottom>
+                <Typography
+                    variant="h4"
+                    fontWeight={600}
+                    gutterBottom
+                    color="#1e293b"
+                    sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}
+                >
                     Welcome, {userName}!
                 </Typography>
-                <Typography variant="body1" color="text.secondary">
+                <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
                     Here's your academic overview for today.
                 </Typography>
             </Box>
 
+            {isLoading && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                    <CircularProgress />
+                </Box>
+            )}
+
+            {error && (
+                <Alert severity="error" sx={{ mb: 3 }}>
+                    Failed to load dashboard stats. Please try again.
+                </Alert>
+            )}
+
             {/* Dashboard Grid */}
-            <Grid container spacing={3}>
-                {/* Attendance Widget */}
+            <Grid container spacing={{ xs: 2, sm: 3 }}>
+                {/* Attendance Card */}
                 <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                    <AttendanceWidget />
+                    <DashboardCard
+                        title="My Attendance"
+                        value={`${percentage}%`}
+                        subtitle={`${presentDays} of ${totalDays} days present`}
+                        icon={<AttendanceIcon sx={{ fontSize: 28 }} />}
+                        color="#10b981"
+                        bgColor="#ecfdf5"
+                        to="/student/attendance"
+                    />
                 </Grid>
 
-                {/* Quick Stats */}
+                {/* Timetable Card */}
                 <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                    <Paper
-                        sx={{
-                            p: 3,
-                            height: '100%',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            textAlign: 'center',
-                            bgcolor: 'primary.50',
-                            border: '1px solid',
-                            borderColor: 'primary.200',
-                        }}
-                    >
-                        <ClassIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
-                        <Typography variant="h6" fontWeight={600}>
-                            My Classes
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            View your class schedule and subjects
-                        </Typography>
-                    </Paper>
+                    <DashboardCard
+                        title="Timetable"
+                        value={summary?.total || '-'}
+                        subtitle="School days this month"
+                        icon={<TimetableIcon sx={{ fontSize: 28 }} />}
+                        color="#3b82f6"
+                        bgColor="#eff6ff"
+                        to="/student/timetable"
+                    />
                 </Grid>
 
+                {/* Exams Card */}
                 <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                    <Paper
-                        sx={{
-                            p: 3,
-                            height: '100%',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            textAlign: 'center',
-                            bgcolor: 'success.50',
-                            border: '1px solid',
-                            borderColor: 'success.200',
-                        }}
-                    >
-                        <ResultsIcon sx={{ fontSize: 48, color: 'success.main', mb: 1 }} />
-                        <Typography variant="h6" fontWeight={600}>
-                            My Results
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            Check your exam scores and grades
-                        </Typography>
-                    </Paper>
+                    <DashboardCard
+                        title="My Exams"
+                        value={summary?.absent || 0}
+                        subtitle="Days absent this month"
+                        icon={<ResultsIcon sx={{ fontSize: 28 }} />}
+                        color="#8b5cf6"
+                        bgColor="#f5f3ff"
+                        to="/student/exam/my-exams"
+                    />
                 </Grid>
 
-                {/* Leave Requests Section - Coming Soon */}
+                {/* Leave Requests Card */}
                 <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                    <Paper
-                        sx={{
-                            p: 3,
-                            height: '100%',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            textAlign: 'center',
-                            bgcolor: 'warning.50',
-                            border: '1px solid',
-                            borderColor: 'warning.200',
-                        }}
-                    >
-                        <AttendanceIcon sx={{ fontSize: 48, color: 'warning.main', mb: 1 }} />
-                        <Typography variant="h6" fontWeight={600}>
-                            Leave Requests
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            Apply for leave and track status
-                        </Typography>
-                    </Paper>
+                    <DashboardCard
+                        title="Leave Requests"
+                        value={summary?.leave || 0}
+                        subtitle="Days on leave"
+                        icon={<LeaveIcon sx={{ fontSize: 28 }} />}
+                        color="#f59e0b"
+                        bgColor="#fffbeb"
+                        to="/student/leave/apply"
+                    />
+                </Grid>
+
+                {/* My Requests Card */}
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                    <DashboardCard
+                        title="My Requests"
+                        value={summary?.late || 0}
+                        subtitle="Days late this month"
+                        icon={<RequestIcon sx={{ fontSize: 28 }} />}
+                        color="#ec4899"
+                        bgColor="#fdf2f8"
+                        to="/student/my-requests"
+                    />
+                </Grid>
+
+                {/* My Profile Card */}
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                    <DashboardCard
+                        title="My Profile"
+                        value={presentDays}
+                        subtitle="Days present this month"
+                        icon={<ClassIcon sx={{ fontSize: 28 }} />}
+                        color="#06b6d4"
+                        bgColor="#ecfeff"
+                        to="/student/profile"
+                    />
                 </Grid>
             </Grid>
         </Box>

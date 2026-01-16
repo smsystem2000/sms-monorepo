@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
-const { connectDB } = require('./configs/db');
+const { connectDB, ensureDbConnection } = require('./configs/db');
 const teacherRoutes = require('./routes/teacher.routes');
 const studentRoutes = require('./routes/student.routes');
 const parentRoutes = require('./routes/parent.routes');
@@ -12,6 +12,7 @@ const classRoutes = require('./routes/class.routes');
 const subjectRoutes = require('./routes/subject.routes');
 const attendanceRoutes = require('./routes/attendance.routes');
 const leaveRoutes = require('./routes/leave.routes');
+const uploadRoutes = require('./routes/upload.routes');
 
 const app = express();
 
@@ -41,6 +42,9 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// MongoDB auto-reconnection middleware - ensures DB is connected before processing requests
+app.use(ensureDbConnection);
+
 // School-specific user routes (stored in school databases)
 app.use('/api/school/:schoolId/teachers', teacherRoutes);
 app.use('/api/school/:schoolId/students', studentRoutes);
@@ -51,6 +55,7 @@ app.use('/api/school/:schoolId/classes', classRoutes);
 app.use('/api/school/:schoolId/subjects', subjectRoutes);
 app.use('/api/school/:schoolId/attendance', attendanceRoutes);
 app.use('/api/school/:schoolId/leave', leaveRoutes);
+app.use('/api/school/upload', uploadRoutes);
 
 // Health check endpoint
 app.get('/health', (_req, res) => {

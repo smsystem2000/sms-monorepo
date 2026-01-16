@@ -55,6 +55,9 @@ const teacherSchema = new mongoose.Schema(
         profileImage: {
             type: String,
         },
+        signature: {
+            type: String,
+        },
     },
     {
         timestamps: true,

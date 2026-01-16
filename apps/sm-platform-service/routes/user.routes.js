@@ -11,18 +11,17 @@ const { Authenticated, authorizeRoles } = require("@sms/shared/middlewares");
 
 // Apply authentication and authorization to all routes
 router.use(Authenticated);
-router.use(authorizeRoles("super_admin"));
 
 // Create a new user
-router.post("/create-user", createUser);
+router.post("/create-user", authorizeRoles("super_admin"), createUser);
 
 // Get all users
-router.get("/get-users", getAllUsers);
+router.get("/get-users", authorizeRoles("super_admin"), getAllUsers);
 
 // Get user by userId
-router.get("/get-user/:userId", getUserById);
+router.get("/get-user/:userId", authorizeRoles("super_admin", "sch_admin"), getUserById);
 
 // Update user by userId
-router.put("/update-user/:userId", updateUserById);
+router.put("/update-user/:userId", authorizeRoles("super_admin", "sch_admin"), updateUserById);
 
 module.exports = router;

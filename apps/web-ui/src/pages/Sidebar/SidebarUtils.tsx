@@ -132,6 +132,23 @@ export const SchoolAdminMenuItems: SideBarMenuItemType[] = [
     ],
   },
   {
+    name: "Exam Management",
+    icon: <MuiIcons.Assessment />,
+    isExpandable: true,
+    subItems: [
+      {
+        name: "Configuration",
+        icon: <MuiIcons.Settings />,
+        path: "/school-admin/exam/config",
+      },
+      {
+        name: "Exam Scheduler",
+        icon: <MuiIcons.Event />,
+        path: "/school-admin/exam/scheduler",
+      },
+    ],
+  },
+  {
     name: "School Location",
     icon: <MuiIcons.LocationOn />,
     path: "/school-admin/location",
@@ -143,6 +160,7 @@ export const SchoolAdminMenuItems: SideBarMenuItemType[] = [
     path: "/school-admin/profile",
     isExpandable: false,
   },
+
 ];
 
 // Teachers Menu Items
@@ -212,6 +230,18 @@ export const TeachersMenuItems: SideBarMenuItemType[] = [
     isExpandable: false,
   },
   {
+    name: "Exam",
+    icon: <MuiIcons.Assessment />,
+    isExpandable: true,
+    subItems: [
+      {
+        name: "Marks Entry",
+        icon: <MuiIcons.Create />,
+        path: "/teacher/exam/marks",
+      },
+    ],
+  },
+  {
     name: "Profile",
     icon: <MuiIcons.AccountCircle />,
     path: "/teacher/profile",
@@ -272,6 +302,12 @@ export const StudentsMenuItems: SideBarMenuItemType[] = [
     name: "My Timetable",
     icon: <MuiIcons.Schedule />,
     path: "/student/timetable",
+    isExpandable: false,
+  },
+  {
+    name: "My Exams",
+    icon: <MuiIcons.Assignment />,
+    path: "/student/exam/my-exams",
     isExpandable: false,
   },
   {

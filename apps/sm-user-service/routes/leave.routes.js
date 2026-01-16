@@ -9,6 +9,7 @@ const {
     cancelLeave,
     getLeaveStats,
     getStudentLeavesForTeacher,
+    getTeachersOnLeaveForDate,
 } = require("../controllers/leave.controller");
 const { checkAuth, checkRole } = require("@sms/shared/middlewares");
 
@@ -21,6 +22,9 @@ router.get("/stats", checkRole(["sch_admin"]), getLeaveStats);
 
 // Get all leave requests
 router.get("/all", checkRole(["sch_admin"]), getAllLeaves);
+
+// Get teachers on leave for a specific date (for timetable integration)
+router.get("/teachers-on-leave", checkRole(["sch_admin"]), getTeachersOnLeaveForDate);
 
 // Teacher routes for class student leaves
 router.get("/class-leaves", checkRole(["teacher"]), getStudentLeavesForTeacher);

@@ -2,11 +2,11 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
-const { connectDB } = require("./configs/db");
-const schoolRoutes = require("./routes/school.routes");
-const userRoutes = require("./routes/user.routes");
-const dashboardRoutes = require("./routes/dashboard.routes");
-
+const { connectDB, ensureDbConnection } = require('./configs/db');
+const schoolRoutes = require('./routes/school.routes');
+const userRoutes = require('./routes/user.routes');
+const dashboardRoutes = require('./routes/dashboard.routes');
+const uploadRoutes = require('./routes/upload.routes');
 
 const app = express();
 
@@ -46,9 +46,13 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/api/admin/school", schoolRoutes);
-app.use("/api/admin/user", userRoutes);
-app.use("/api/admin/dashboard", dashboardRoutes);
+// MongoDB auto-reconnection middleware - ensures DB is connected before processing requests
+app.use(ensureDbConnection);
+
+app.use('/api/admin/school', schoolRoutes);
+app.use('/api/admin/user', userRoutes);
+app.use('/api/admin/dashboard', dashboardRoutes);
+app.use('/api/admin/upload', uploadRoutes);
 
 // Health check endpoint
 app.get("/health", (_req, res) => {

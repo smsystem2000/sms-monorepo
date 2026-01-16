@@ -14,16 +14,22 @@ interface DecodedToken {
   userId?: string;
   schoolId?: string;
   schoolDbName?: string;
+  schoolName?: string;
 
   // Teacher specific
   teacherId?: string;
   classes?: string[];
   subjects?: string[];
+  subjectNames?: string[];
+  department?: string;
 
   // Student specific
   studentId?: string;
   class?: string;
   section?: string;
+  className?: string;
+  sectionName?: string;
+  rollNumber?: string;
 
   // Name fields
   firstName?: string;

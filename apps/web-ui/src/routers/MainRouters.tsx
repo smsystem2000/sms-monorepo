@@ -58,6 +58,12 @@ import ParentDashboard from "../pages/Parent/Dashboard";
 import { MyTimetable as StudentTimetable } from "../pages/Student/Timetable";
 import Menus from "../pages/SuperAdmin/Menus";
 
+// Exam Management Pages
+import ExamConfiguration from "../pages/SchoolAdmin/Exam/ExamConfiguration";
+import ExamScheduler from "../pages/SchoolAdmin/Exam/ExamScheduler";
+import MarksEntry from "../pages/Teacher/Exam/MarksEntry";
+import MyExams from "../pages/Student/Exam/MyExams";
+
 const MainRouters = () => {
   return (
     <Routes>
@@ -89,6 +95,11 @@ const MainRouters = () => {
         <Route path="/school-admin/timetable/master" element={<TimetableMaster />} />
         <Route path="/school-admin/timetable/conflicts" element={<ConflictManagement />} />
         <Route path="/school-admin/timetable/substitutes" element={<SubstituteManagement />} />
+
+        {/* Exam Management Routes (Admin) */}
+        <Route path="/school-admin/exam/config" element={<ExamConfiguration />} />
+        <Route path="/school-admin/exam/scheduler" element={<ExamScheduler />} />
+
         <Route path="/school-admin/location" element={<SchoolLocation />} />
         <Route path="/school-admin/profile" element={<SchoolAdminProfile />} />
       </Route>
@@ -104,7 +115,9 @@ const MainRouters = () => {
         <Route path="/teacher/leave/apply" element={<TeacherApplyLeave />} />
         <Route path="/teacher/leave/my" element={<TeacherMyLeaves />} />
         <Route path="/teacher/leave/students" element={<TeacherStudentLeaves />} />
+        <Route path="/teacher/leave/students" element={<TeacherStudentLeaves />} />
         <Route path="/teacher/timetable" element={<TeacherTimetable />} />
+        <Route path="/teacher/exam/marks" element={<MarksEntry />} />
         <Route path="/teacher/profile" element={<TeacherProfile />} />
       </Route>
 
@@ -118,7 +131,9 @@ const MainRouters = () => {
         <Route path="/student/my-requests" element={<StudentMyRequests />} />
         <Route path="/student/leave/apply" element={<StudentApplyLeave />} />
         <Route path="/student/leave/my" element={<StudentMyLeaves />} />
+        <Route path="/student/leave/my" element={<StudentMyLeaves />} />
         <Route path="/student/timetable" element={<StudentTimetable />} />
+        <Route path="/student/exam/my-exams" element={<MyExams />} />
         <Route path="/student/profile" element={<StudentProfile />} />
       </Route>
 

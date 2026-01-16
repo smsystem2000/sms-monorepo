@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Box,
     Typography,
@@ -7,26 +7,74 @@ import {
     TextField,
     Button,
     Chip,
+    Avatar,
+    Card,
+    CardContent,
     Divider,
+    Snackbar,
+    Alert,
+    CircularProgress,
 } from '@mui/material';
-import { Edit as EditIcon, Save as SaveIcon, Cancel as CancelIcon } from '@mui/icons-material';
+import {
+    Person as PersonIcon,
+    Email as EmailIcon,
+    Phone as PhoneIcon,
+    Badge as BadgeIcon,
+    AdminPanelSettings as AdminIcon,
+    Save as SaveIcon,
+    Cancel as CancelIcon,
+    Edit as EditIcon,
+    School as SchoolIcon,
+} from '@mui/icons-material';
 import TokenService from '../../queries/token/tokenService';
+import { useGetSchoolAdminById } from '../../queries/SchoolAdmin';
 
 const SchoolAdminProfile = () => {
     const [isEditing, setIsEditing] = useState(false);
+    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+        open: false,
+        message: '',
+        severity: 'success'
+    });
 
-    // Get user info from token
+    // Get IDs from token for API calls
     const decodedToken = TokenService.decodeToken();
     const userId = decodedToken?.userId || decodedToken?.adminId || '';
-    const userName = decodedToken?.username || decodedToken?.email || 'User';
-    const userEmail = decodedToken?.email || '';
-    const role = decodedToken?.role || '';
+    const schoolId = decodedToken?.schoolId || '';
+    const role = decodedToken?.role || 'sch_admin';
+
+    // Fetch admin details from API (includes aggregated schoolName)
+    const { data: adminData, isLoading: adminLoading, error: adminError } = useGetSchoolAdminById(userId);
+    const admin = adminData?.data;
+
+    // Use aggregated data from API response
+    const schoolName = admin?.schoolName || schoolId;
+
+    // User details from API
+    const userName = admin?.firstName
+        ? `${admin.firstName} ${admin.lastName || ''}`.trim()
+        : admin?.username || decodedToken?.email?.split('@')[0] || 'Admin';
+    const userEmail = admin?.email || '';
+    const userPhone = admin?.contactNumber || admin?.phone || admin?.phoneNumber || '';
 
     const [formData, setFormData] = useState({
-        username: userName,
-        email: userEmail,
+        firstName: '',
+        lastName: '',
+        email: '',
         phone: '',
     });
+
+    // Update form data when admin data loads
+    useEffect(() => {
+        if (admin) {
+            setFormData({
+                firstName: admin.firstName || '',
+                lastName: admin.lastName || '',
+                email: admin.email || '',
+                phone: admin.contactNumber || admin.phone || admin.phoneNumber || '',
+            });
+        }
+    }, [admin]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -36,87 +84,363 @@ const SchoolAdminProfile = () => {
     const handleSave = () => {
         // TODO: Implement save profile API
         setIsEditing(false);
+        setSnackbar({ open: true, message: 'Profile updated successfully!', severity: 'success' });
     };
 
-    return (
-        <Box sx={{ p: { xs: 2, sm: 3 } }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-                <Typography variant="h4" fontWeight={600} color="#1e293b" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
-                    My Profile
-                </Typography>
-                {!isEditing ? (
-                    <Button variant="outlined" startIcon={<EditIcon />} onClick={() => setIsEditing(true)}>
-                        Edit Profile
-                    </Button>
-                ) : (
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Button variant="outlined" startIcon={<CancelIcon />} onClick={() => setIsEditing(false)}>
-                            Cancel
-                        </Button>
-                        <Button variant="contained" startIcon={<SaveIcon />} onClick={handleSave}>
-                            Save
-                        </Button>
-                    </Box>
-                )}
+    const handleCancel = () => {
+        setFormData({
+            firstName: admin?.firstName || '',
+            lastName: admin?.lastName || '',
+            email: admin?.email || '',
+            phone: admin?.phoneNumber || admin?.phone || '',
+        });
+        setIsEditing(false);
+    };
+
+    // Get initials for avatar
+    const getInitials = () => {
+        if (admin?.firstName && admin?.lastName) {
+            return `${admin.firstName[0]}${admin.lastName[0]}`.toUpperCase();
+        }
+        return admin?.firstName ? admin.firstName[0].toUpperCase() : 'A';
+    };
+
+    const getRoleLabel = (r: string) => {
+        switch (r) {
+            case 'sch_admin': return 'School Administrator';
+            case 'super_admin': return 'Super Admin';
+            default: return r;
+        }
+    };
+
+    if (adminLoading) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+                <CircularProgress />
             </Box>
+        );
+    }
 
-            <Paper sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2 }}>
-                <Typography variant="h6" fontWeight={600} color="#1e293b" gutterBottom>
-                    Account Information
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                    You can update your profile information directly.
-                </Typography>
+    if (adminError) {
+        return (
+            <Box sx={{ p: 3 }}>
+                <Alert severity="error">Failed to load profile. Please try again later.</Alert>
+            </Box>
+        );
+    }
 
-                <Grid container spacing={3}>
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                        <TextField
-                            name="username"
-                            label="Username"
-                            value={formData.username}
-                            onChange={handleChange}
-                            disabled={!isEditing}
-                            fullWidth
-                        />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                        <TextField
-                            name="email"
-                            label="Email"
-                            type="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            disabled={!isEditing}
-                            fullWidth
-                        />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                        <TextField
-                            name="phone"
-                            label="Phone"
-                            value={formData.phone}
-                            onChange={handleChange}
-                            disabled={!isEditing}
-                            fullWidth
-                        />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                        <Typography variant="caption" color="text.secondary">User ID</Typography>
-                        <Typography variant="body1" fontWeight={500}>{userId}</Typography>
-                    </Grid>
-                </Grid>
+    return (
+        <Box sx={{ p: { xs: 2, sm: 3 }, maxWidth: 1200, mx: 'auto' }}>
+            {/* Header Card with Avatar */}
+            <Paper
+                sx={{
+                    p: 4,
+                    mb: 3,
+                    borderRadius: 3,
+                    background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)',
+                    color: 'white',
+                    position: 'relative',
+                    overflow: 'hidden'
+                }}
+            >
+                <Box sx={{
+                    position: 'absolute',
+                    top: -50,
+                    right: -50,
+                    width: 200,
+                    height: 200,
+                    borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.1)'
+                }} />
+                <Box sx={{
+                    position: 'absolute',
+                    bottom: -30,
+                    left: -30,
+                    width: 120,
+                    height: 120,
+                    borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.05)'
+                }} />
 
-                <Divider sx={{ my: 4 }} />
-
-                <Grid container spacing={3}>
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                        <Typography variant="caption" color="text.secondary">Role</Typography>
-                        <Box sx={{ mt: 0.5 }}>
-                            <Chip label={role} size="small" color="primary" />
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap', position: 'relative', zIndex: 1 }}>
+                    <Avatar
+                        src={admin?.profileImage}
+                        sx={{
+                            width: 100,
+                            height: 100,
+                            fontSize: '2.5rem',
+                            bgcolor: 'rgba(255,255,255,0.2)',
+                            border: '3px solid rgba(255,255,255,0.5)'
+                        }}
+                    >
+                        {!admin?.profileImage && getInitials()}
+                    </Avatar>
+                    <Box sx={{ flex: 1 }}>
+                        <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5 }}>
+                            {userName}
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                            <Chip
+                                icon={<AdminIcon sx={{ color: 'white !important' }} />}
+                                label={getRoleLabel(role)}
+                                size="small"
+                                sx={{
+                                    bgcolor: 'rgba(255,255,255,0.2)',
+                                    color: 'white',
+                                    fontWeight: 600,
+                                    '& .MuiChip-icon': { color: 'white' }
+                                }}
+                            />
+                            <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                                ID: {admin?.userId || userId}
+                            </Typography>
                         </Box>
-                    </Grid>
-                </Grid>
+                    </Box>
+                    {!isEditing ? (
+                        <Button
+                            variant="contained"
+                            startIcon={<EditIcon />}
+                            onClick={() => setIsEditing(true)}
+                            sx={{
+                                bgcolor: 'rgba(255,255,255,0.2)',
+                                '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' }
+                            }}
+                        >
+                            Edit Profile
+                        </Button>
+                    ) : (
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Button
+                                variant="outlined"
+                                startIcon={<CancelIcon />}
+                                onClick={handleCancel}
+                                sx={{
+                                    borderColor: 'rgba(255,255,255,0.5)',
+                                    color: 'white',
+                                    '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.1)' }
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="contained"
+                                startIcon={<SaveIcon />}
+                                onClick={handleSave}
+                                sx={{
+                                    bgcolor: 'rgba(255,255,255,0.2)',
+                                    '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' }
+                                }}
+                            >
+                                Save
+                            </Button>
+                        </Box>
+                    )}
+                </Box>
             </Paper>
+
+            <Grid container spacing={3}>
+                {/* Account Information Card */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                    <Card sx={{ height: '100%', borderRadius: 2 }}>
+                        <CardContent sx={{ p: 3 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+                                <PersonIcon color="primary" />
+                                <Typography variant="h6" fontWeight={600}>Account Information</Typography>
+                            </Box>
+
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                                {isEditing ? (
+                                    <>
+                                        <TextField
+                                            name="firstName"
+                                            label="First Name"
+                                            value={formData.firstName}
+                                            onChange={handleChange}
+                                            fullWidth
+                                            size="small"
+                                        />
+                                        <TextField
+                                            name="lastName"
+                                            label="Last Name"
+                                            value={formData.lastName}
+                                            onChange={handleChange}
+                                            fullWidth
+                                            size="small"
+                                        />
+                                    </>
+                                ) : (
+                                    <>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                            <Box sx={{
+                                                width: 40,
+                                                height: 40,
+                                                borderRadius: 2,
+                                                bgcolor: 'primary.50',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
+                                            }}>
+                                                <PersonIcon color="primary" fontSize="small" />
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">Full Name</Typography>
+                                                <Typography variant="body1" fontWeight={500}>{userName}</Typography>
+                                            </Box>
+                                        </Box>
+                                    </>
+                                )}
+
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <Box sx={{
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: 2,
+                                        bgcolor: 'success.50',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}>
+                                        <BadgeIcon color="success" fontSize="small" />
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="caption" color="text.secondary">Admin ID</Typography>
+                                        <Typography variant="body1" fontWeight={500}>{admin?.userId || userId}</Typography>
+                                    </Box>
+                                </Box>
+
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <Box sx={{
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: 2,
+                                        bgcolor: 'warning.50',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}>
+                                        <SchoolIcon color="warning" fontSize="small" />
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="caption" color="text.secondary">School</Typography>
+                                        <Typography variant="body1" fontWeight={500}>{schoolName}</Typography>
+                                    </Box>
+                                </Box>
+                            </Box>
+                        </CardContent>
+                    </Card>
+                </Grid>
+
+                {/* Contact Information Card */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                    <Card sx={{ height: '100%', borderRadius: 2 }}>
+                        <CardContent sx={{ p: 3 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+                                <EmailIcon color="primary" />
+                                <Typography variant="h6" fontWeight={600}>Contact Information</Typography>
+                            </Box>
+
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                                {isEditing ? (
+                                    <>
+                                        <TextField
+                                            name="email"
+                                            label="Email"
+                                            type="email"
+                                            value={formData.email}
+                                            onChange={handleChange}
+                                            fullWidth
+                                            size="small"
+                                        />
+                                        <TextField
+                                            name="phone"
+                                            label="Phone"
+                                            value={formData.phone}
+                                            onChange={handleChange}
+                                            fullWidth
+                                            size="small"
+                                        />
+                                    </>
+                                ) : (
+                                    <>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                            <Box sx={{
+                                                width: 40,
+                                                height: 40,
+                                                borderRadius: 2,
+                                                bgcolor: 'info.50',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
+                                            }}>
+                                                <EmailIcon color="info" fontSize="small" />
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">Email</Typography>
+                                                <Typography variant="body1" fontWeight={500}>{userEmail || '-'}</Typography>
+                                            </Box>
+                                        </Box>
+
+                                        <Divider />
+
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                            <Box sx={{
+                                                width: 40,
+                                                height: 40,
+                                                borderRadius: 2,
+                                                bgcolor: 'error.50',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
+                                            }}>
+                                                <PhoneIcon color="error" fontSize="small" />
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">Phone</Typography>
+                                                <Typography variant="body1" fontWeight={500}>{userPhone || 'Not provided'}</Typography>
+                                            </Box>
+                                        </Box>
+                                    </>
+                                )}
+                            </Box>
+                        </CardContent>
+                    </Card>
+                </Grid>
+
+                {/* Role & Permissions Card */}
+                <Grid size={{ xs: 12 }}>
+                    <Card sx={{ borderRadius: 2 }}>
+                        <CardContent sx={{ p: 3 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                                <AdminIcon color="primary" />
+                                <Typography variant="h6" fontWeight={600}>Role & Access</Typography>
+                            </Box>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                Your administrative privileges and access level.
+                            </Typography>
+                            <Chip
+                                icon={<AdminIcon />}
+                                label={getRoleLabel(role)}
+                                color="primary"
+                                sx={{ fontWeight: 600 }}
+                            />
+                        </CardContent>
+                    </Card>
+                </Grid>
+            </Grid>
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={4000}
+                onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            >
+                <Alert
+                    onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+                    severity={snackbar.severity}
+                >
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 };

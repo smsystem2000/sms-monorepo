@@ -22,4 +22,13 @@ module.exports = {
     SubstituteAssignmentSchema: require('./substitute-assignment.model'),
     RoomSchema: require('./room.model'),
     PeriodSwapSchema: require('./period-swap.model'),
+
+    // Exam Management
+    ExamTermSchema: require('./exam-term.model'),
+    ExamTypeSchema: require('./exam-type.model'),
+    GradingSystemSchema: require('./grading-system.model'),
+    ExamSchema: require('./exam.model'),
+    ExamScheduleSchema: require('./exam-schedule.model'),
+    ExamResultSchema: require('./exam-result.model'),
+    StudentExamRegistrationSchema: require('./student-exam-registration.model'),
 };

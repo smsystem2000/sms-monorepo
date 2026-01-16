@@ -16,12 +16,16 @@ import {
     MenuItem,
     Autocomplete,
     Chip,
+    Typography,
+    Divider,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { useCreateTeacher, useUpdateTeacher } from '../../queries/Teacher';
 import { useGetClasses } from '../../queries/Class';
 import { useGetSubjects } from '../../queries/Subject';
 import type { CreateTeacherPayload, Teacher, Class, Subject } from '../../types';
+import { ImageUpload } from '../ImageUpload';
+import { IMAGEKIT_FOLDERS } from '../../utils/imagekit';
 
 interface TeacherDialogProps {
     open: boolean;
@@ -43,6 +47,8 @@ const TeacherDialog: React.FC<TeacherDialogProps> = ({ open, onClose, schoolId, 
         classes: [],
         sections: [],
         status: 'active',
+        profileImage: '',
+        signature: '',
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -86,6 +92,8 @@ const TeacherDialog: React.FC<TeacherDialogProps> = ({ open, onClose, schoolId, 
                 classes: editData.classes || [],
                 sections: editData.sections || [],
                 status: editData.status || 'active',
+                profileImage: editData.profileImage || '',
+                signature: editData.signature || '',
             });
         } else {
             setFormData({
@@ -98,6 +106,8 @@ const TeacherDialog: React.FC<TeacherDialogProps> = ({ open, onClose, schoolId, 
                 classes: [],
                 sections: [],
                 status: 'active',
+                profileImage: '',
+                signature: '',
             });
         }
     }, [editData]);
@@ -162,6 +172,8 @@ const TeacherDialog: React.FC<TeacherDialogProps> = ({ open, onClose, schoolId, 
             classes: [],
             sections: [],
             status: 'active',
+            profileImage: '',
+            signature: '',
         });
         setErrors({});
         createMutation.reset();
@@ -419,6 +431,49 @@ const TeacherDialog: React.FC<TeacherDialogProps> = ({ open, onClose, schoolId, 
                                     <MenuItem value="inactive">Inactive</MenuItem>
                                 </Select>
                             </FormControl>
+                        </Grid>
+
+                        {/* Profile Image and Signature */}
+                        <Grid size={{ xs: 12 }}>
+                            <Divider sx={{ my: 1 }} />
+                            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
+                                Images
+                            </Typography>
+                        </Grid>
+
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                            <ImageUpload
+                                folder={IMAGEKIT_FOLDERS.PROFILE_IMAGES}
+                                fileName={isEditMode && editData ? `${editData.teacherId}_profile` : `new_teacher_profile_${Date.now()}`}
+                                currentImage={formData.profileImage}
+                                label="Profile Image"
+                                authEndpoint="school"
+                                variant="avatar"
+                                size="medium"
+                                onUploadSuccess={(result) => {
+                                    setFormData(prev => ({ ...prev, profileImage: result.url }));
+                                }}
+                                onRemove={() => {
+                                    setFormData(prev => ({ ...prev, profileImage: '' }));
+                                }}
+                            />
+                        </Grid>
+
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                            <ImageUpload
+                                folder={IMAGEKIT_FOLDERS.SIGNATURES}
+                                fileName={isEditMode && editData ? `${editData.teacherId}_signature` : `new_teacher_signature_${Date.now()}`}
+                                currentImage={formData.signature}
+                                label="Signature"
+                                authEndpoint="school"
+                                size="small"
+                                onUploadSuccess={(result) => {
+                                    setFormData(prev => ({ ...prev, signature: result.url }));
+                                }}
+                                onRemove={() => {
+                                    setFormData(prev => ({ ...prev, signature: '' }));
+                                }}
+                            />
                         </Grid>
                     </Grid>
                 </DialogContent>

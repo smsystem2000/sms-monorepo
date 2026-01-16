@@ -181,7 +181,7 @@ const createStudent = async (req, res) => {
     }
 };
 
-// Get student by studentId
+// Get student by studentId (with aggregated details)
 const getStudentById = async (req, res) => {
     try {
         const { schoolId, id: studentId } = req.params;
@@ -204,10 +204,48 @@ const getStudentById = async (req, res) => {
             });
         }
 
+        // Convert to object to add additional fields
+        const studentObj = student.toObject();
+
+        // Fetch school details for schoolName, schoolAddress, schoolLogo
+        const school = await School.findOne({ schoolId });
+        if (school) {
+            studentObj.schoolName = school.schoolName;
+            studentObj.schoolAddress = school.schoolAddress || '';
+            studentObj.schoolLogo = school.schoolLogo || '';
+        }
+
+        // Fetch class details for className and sectionName
+        if (student.class) {
+            const Class = getClassModel(schoolDbName);
+            const classData = await Class.findOne({ classId: student.class });
+            if (classData) {
+                studentObj.className = classData.name;
+                // Find section name from sections array
+                if (student.section && classData.sections) {
+                    const section = classData.sections.find(
+                        s => s.sectionId === student.section || s._id?.toString() === student.section
+                    );
+                    if (section) {
+                        studentObj.sectionName = section.name;
+                    }
+                }
+            }
+        }
+
+        // Fetch parent details for parentName
+        if (student.parentId) {
+            const Parent = getParentModel(schoolDbName);
+            const parent = await Parent.findOne({ parentId: student.parentId });
+            if (parent) {
+                studentObj.parentName = `${parent.firstName} ${parent.lastName}`;
+            }
+        }
+
         return res.status(200).json({
             success: true,
             message: "Student fetched successfully",
-            data: student,
+            data: studentObj,
         });
     } catch (error) {
         console.error("Error fetching student:", error);

@@ -198,7 +198,8 @@ const AdmitCardBlock = ({ schoolId, exam, studentId }: { schoolId: string, exam:
     const studentName = student?.firstName
         ? `${student.firstName} ${student.lastName || ''}`.trim()
         : 'Student Name';
-    const fatherName = student?.fatherName || student?.parentName || 'Father Name';
+    const fatherName = student?.fatherName || student?.parentName || 'N/A';
+    const fatherNameLabel = student?.fatherNameLabel || "Father's Name";
     const rollNumber = admitCardData?.rollNumber || student?.rollNumber || 'N/A';
     const className = student?.className || admitCardData?.classId || '';
     const sectionName = student?.sectionName || admitCardData?.sectionId || '';
@@ -225,6 +226,7 @@ const AdmitCardBlock = ({ schoolId, exam, studentId }: { schoolId: string, exam:
                 <AdmitCardPDF
                     studentName={studentName}
                     fatherName={fatherName}
+                    fatherNameLabel={fatherNameLabel}
                     rollNumber={rollNumber}
                     studentId={studentId}
                     className={className}
@@ -241,6 +243,12 @@ const AdmitCardBlock = ({ schoolId, exam, studentId }: { schoolId: string, exam:
                     academicYear={exam.academicYear || '2025-2026'}
                     startDate={exam.startDate}
                     endDate={exam.endDate}
+                    examSchedule={examSchedule.map((sch: any) => ({
+                        date: sch.date,
+                        startTime: sch.startTime,
+                        endTime: sch.endTime,
+                        subjectName: getSubjectName(sch.subjectId),
+                    }))}
                 />
             ).toBlob();
 
@@ -422,7 +430,7 @@ const AdmitCardBlock = ({ schoolId, exam, studentId }: { schoolId: string, exam:
                                 </Box>
                             </Box>
                             <Chip
-                                label="E - ADMIT CARD"
+                                label="ADMIT CARD"
                                 sx={{
                                     mt: 1,
                                     bgcolor: '#ff9800',
@@ -460,7 +468,7 @@ const AdmitCardBlock = ({ schoolId, exam, studentId }: { schoolId: string, exam:
                                                 </TableRow>
                                                 <TableRow>
                                                     <TableCell sx={{ bgcolor: '#f5f5f5', fontWeight: 600 }}>
-                                                        Father's Name
+                                                        {fatherNameLabel}
                                                     </TableCell>
                                                     <TableCell>{fatherName}</TableCell>
                                                 </TableRow>

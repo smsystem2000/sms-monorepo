@@ -43,6 +43,7 @@ import {
     useUpsertPeriod,
     useRemovePeriod,
     useRemoveShift,
+    useToggleTimetableDisable,
 } from '../../../queries/Timetable';
 import type { Period, Shift } from '../../../types/timetable.types';
 import TokenService from '../../../queries/token/tokenService';
@@ -293,6 +294,13 @@ const TimetableConfigPage = () => {
     const removePeriod = useRemovePeriod(schoolId, config?.configId || '');
     const removeShift = useRemoveShift(schoolId, config?.configId || '');
     const updateConfig = useUpdateConfig(schoolId, config?.configId || '');
+    const toggleDisable = useToggleTimetableDisable(schoolId);
+
+    // Temporary disable state
+    const [disableDialogOpen, setDisableDialogOpen] = useState(false);
+    const [disableFrom, setDisableFrom] = useState('');
+    const [disableTo, setDisableTo] = useState('');
+    const [disableReason, setDisableReason] = useState('');
 
     const handleCreateConfig = async () => {
         if (!newAcademicYear) return;
@@ -468,6 +476,56 @@ const TimetableConfigPage = () => {
                         </Grid>
                     </Paper>
 
+                    {/* Temporary Disable Section */}
+                    <Paper sx={{
+                        p: 3,
+                        mb: 3,
+                        bgcolor: config.temporarilyDisabled ? 'warning.50' : 'transparent',
+                        border: config.temporarilyDisabled ? '2px solid' : 'none',
+                        borderColor: 'warning.main'
+                    }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <Box>
+                                <Typography variant="h6">
+                                    {config.temporarilyDisabled ? '⚠️ Timetable Temporarily Disabled' : 'Temporary Disable'}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    {config.temporarilyDisabled
+                                        ? 'Exam scheduling will NOT check for class conflicts during this period.'
+                                        : 'Disable timetable temporarily during exams or special events.'}
+                                </Typography>
+                            </Box>
+                            {config.temporarilyDisabled ? (
+                                <Button
+                                    variant="contained"
+                                    color="success"
+                                    onClick={() => toggleDisable.mutate({ disabled: false })}
+                                    disabled={toggleDisable.isPending}
+                                >
+                                    {toggleDisable.isPending ? <CircularProgress size={20} /> : 'Enable Timetable'}
+                                </Button>
+                            ) : (
+                                <Button
+                                    variant="outlined"
+                                    color="warning"
+                                    onClick={() => setDisableDialogOpen(true)}
+                                >
+                                    Disable Temporarily
+                                </Button>
+                            )}
+                        </Box>
+                        {config.temporarilyDisabled && (
+                            <Alert severity="warning" sx={{ mt: 2 }}>
+                                <Typography variant="body2">
+                                    {config.disabledFrom && config.disabledTo
+                                        ? `Disabled from ${new Date(config.disabledFrom).toLocaleDateString()} to ${new Date(config.disabledTo).toLocaleDateString()}`
+                                        : 'Disabled indefinitely (no date range specified)'}
+                                    {config.disabledReason && ` — Reason: ${config.disabledReason}`}
+                                </Typography>
+                            </Alert>
+                        )}
+                    </Paper>
+
                     {/* Working Days */}
                     <Paper sx={{ p: 3, mb: 3 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
@@ -597,6 +655,74 @@ const TimetableConfigPage = () => {
                 shifts={config?.shifts || []}
                 nextPeriodNumber={(config?.periods?.length || 0) + 1}
             />
+
+            {/* Disable Timetable Dialog */}
+            <Dialog open={disableDialogOpen} onClose={() => setDisableDialogOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Temporarily Disable Timetable</DialogTitle>
+                <DialogContent>
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                        When disabled, exam scheduling will NOT check for teacher class conflicts.
+                    </Alert>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+                        <Grid container spacing={2}>
+                            <Grid size={{ xs: 6 }}>
+                                <TextField
+                                    label="From Date (Optional)"
+                                    type="date"
+                                    fullWidth
+                                    value={disableFrom}
+                                    onChange={(e) => setDisableFrom(e.target.value)}
+                                    slotProps={{ inputLabel: { shrink: true } }}
+                                />
+                            </Grid>
+                            <Grid size={{ xs: 6 }}>
+                                <TextField
+                                    label="To Date (Optional)"
+                                    type="date"
+                                    fullWidth
+                                    value={disableTo}
+                                    onChange={(e) => setDisableTo(e.target.value)}
+                                    slotProps={{ inputLabel: { shrink: true } }}
+                                />
+                            </Grid>
+                        </Grid>
+                        <TextField
+                            label="Reason (Optional)"
+                            fullWidth
+                            multiline
+                            rows={2}
+                            value={disableReason}
+                            onChange={(e) => setDisableReason(e.target.value)}
+                            placeholder="e.g., Final Exams, Sports Week, etc."
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDisableDialogOpen(false)}>Cancel</Button>
+                    <Button
+                        variant="contained"
+                        color="warning"
+                        onClick={() => {
+                            toggleDisable.mutate({
+                                disabled: true,
+                                disabledFrom: disableFrom || undefined,
+                                disabledTo: disableTo || undefined,
+                                disabledReason: disableReason || undefined,
+                            }, {
+                                onSuccess: () => {
+                                    setDisableDialogOpen(false);
+                                    setDisableFrom('');
+                                    setDisableTo('');
+                                    setDisableReason('');
+                                }
+                            });
+                        }}
+                        disabled={toggleDisable.isPending}
+                    >
+                        {toggleDisable.isPending ? <CircularProgress size={20} /> : 'Disable Timetable'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };

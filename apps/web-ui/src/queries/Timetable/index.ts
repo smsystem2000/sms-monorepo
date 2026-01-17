@@ -3,6 +3,7 @@ import useApi from "../useApi";
 import type {
     TimetableConfig,
     TimetableEntry,
+    TimetableSchedule,
     SubstituteAssignment,
     Room,
     PeriodSwap,
@@ -17,6 +18,9 @@ import type {
     ExportTimetableData,
     CreateTimetableConfigRequest,
     UpdateTimetableConfigRequest,
+    CreateTimetableScheduleRequest,
+    UpdateTimetableScheduleRequest,
+    ActiveScheduleResponse,
     CreateTimetableEntryRequest,
     UpdateTimetableEntryRequest,
     BulkCreateEntriesRequest,
@@ -124,6 +128,23 @@ export const useSetActiveConfig = (schoolId: string) => {
     });
 };
 
+// Toggle temporary disable for timetable
+export const useToggleTimetableDisable = (schoolId: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (data: { disabled?: boolean; disabledFrom?: string; disabledTo?: string; disabledReason?: string }) =>
+            useApi<ApiResponse<TimetableConfig>>(
+                "PATCH" as any,
+                `/api/academics/school/${schoolId}/config/toggle-disable`,
+                data
+            ),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["timetable-config", "active", schoolId] });
+            queryClient.invalidateQueries({ queryKey: ["timetable-configs", schoolId] });
+        },
+    });
+};
+
 export const useDeleteConfig = (schoolId: string) => {
     const queryClient = useQueryClient();
     return useMutation({
@@ -196,6 +217,101 @@ export const useRemoveShift = (schoolId: string, configId: string) => {
             ),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["timetable-config", schoolId] });
+        },
+    });
+};
+
+// ==========================================
+// TIMETABLE SCHEDULE HOOKS (Validity Periods)
+// ==========================================
+
+export const useGetTimetableSchedules = (schoolId: string, status?: string, scheduleType?: string) => {
+    return useQuery({
+        queryKey: ["timetable-schedules", schoolId, status, scheduleType],
+        queryFn: () =>
+            useApi<ApiResponse<TimetableSchedule[]>>(
+                "GET",
+                `/api/academics/school/${schoolId}/schedules`,
+                undefined,
+                { ...(status && { status }), ...(scheduleType && { scheduleType }) }
+            ),
+        enabled: !!schoolId,
+    });
+};
+
+export const useGetActiveSchedule = (schoolId: string, date?: string, scheduleType?: string) => {
+    return useQuery({
+        queryKey: ["active-schedule", schoolId, date, scheduleType],
+        queryFn: () =>
+            useApi<ActiveScheduleResponse>(
+                "GET",
+                `/api/academics/school/${schoolId}/schedules/active`,
+                undefined,
+                { ...(date && { date }), ...(scheduleType && { scheduleType }) }
+            ),
+        enabled: !!schoolId,
+    });
+};
+
+export const useCreateTimetableSchedule = (schoolId: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (data: CreateTimetableScheduleRequest) =>
+            useApi<ApiResponse<TimetableSchedule>>(
+                "POST",
+                `/api/academics/school/${schoolId}/schedules`,
+                data
+            ),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["timetable-schedules", schoolId] });
+            queryClient.invalidateQueries({ queryKey: ["active-schedule", schoolId] });
+        },
+    });
+};
+
+export const useUpdateTimetableSchedule = (schoolId: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ scheduleId, data }: { scheduleId: string; data: UpdateTimetableScheduleRequest }) =>
+            useApi<ApiResponse<TimetableSchedule>>(
+                "PUT",
+                `/api/academics/school/${schoolId}/schedules/${scheduleId}`,
+                data
+            ),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["timetable-schedules", schoolId] });
+            queryClient.invalidateQueries({ queryKey: ["active-schedule", schoolId] });
+        },
+    });
+};
+
+export const useToggleTimetableSchedule = (schoolId: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ scheduleId, status }: { scheduleId: string; status?: 'active' | 'disabled' | 'draft' }) =>
+            useApi<ApiResponse<TimetableSchedule>>(
+                "PATCH" as any,
+                `/api/academics/school/${schoolId}/schedules/${scheduleId}/toggle`,
+                status ? { status } : undefined
+            ),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["timetable-schedules", schoolId] });
+            queryClient.invalidateQueries({ queryKey: ["active-schedule", schoolId] });
+        },
+    });
+};
+
+export const useDeleteTimetableSchedule = (schoolId: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (scheduleId: string) =>
+            useApi<ApiResponse<void>>(
+                "DELETE",
+                `/api/academics/school/${schoolId}/schedules/${scheduleId}`
+            ),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["timetable-schedules", schoolId] });
+            queryClient.invalidateQueries({ queryKey: ["active-schedule", schoolId] });
         },
     });
 };

@@ -31,4 +31,11 @@ module.exports = {
     ExamScheduleSchema: require('./exam-schedule.model'),
     ExamResultSchema: require('./exam-result.model'),
     StudentExamRegistrationSchema: require('./student-exam-registration.model'),
+
+    // Announcements & Notifications
+    AnnouncementSchema: require('./announcement.model'),
+    NotificationSchema: require('./notification.model'),
+
+    // Homework
+    HomeworkSchema: require('./homework.model'),
 };

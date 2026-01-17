@@ -4,6 +4,7 @@ import "./App.css";
 import { BrowserRouter } from "react-router-dom";
 import MainRouters from "./routers/MainRouters";
 import { AuthProvider } from "./context/AuthContext";
+import { ChildSelectorProvider } from "./context/ChildSelectorContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 
 const queryClient = new QueryClient({
@@ -34,9 +35,11 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider theme={theme}>
           <AuthProvider>
-            <BrowserRouter>
-              <MainRouters />
-            </BrowserRouter>
+            <ChildSelectorProvider>
+              <BrowserRouter>
+                <MainRouters />
+              </BrowserRouter>
+            </ChildSelectorProvider>
           </AuthProvider>
         </ThemeProvider>
       </QueryClientProvider>

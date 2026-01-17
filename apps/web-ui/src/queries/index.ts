@@ -38,7 +38,23 @@ export * from "./Attendance";
 // Menus (Platform Service)
 export * from "./Menus";
 
+// Announcements (Notification Service)
+export * from "./Announcement";
+
+// Homework (Academics Service)
+export * from "./Homework";
+
+// Notifications (Notification Service)
+export * from "./Notification";
+
+// Parent Portal (User Service)
+export * from "./ParentPortal";
+
+// Leave Management (User Service)
+export * from "./Leave";
+
 export { default as useApi } from "./useApi";
+
 
 
 

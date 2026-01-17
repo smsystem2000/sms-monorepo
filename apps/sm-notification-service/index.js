@@ -3,9 +3,8 @@ const cors = require('cors');
 require('dotenv').config();
 
 const { connectDB, ensureDbConnection } = require('./configs/db');
-const timetableRoutes = require('./routes/timetable.routes');
-const examRoutes = require('./routes/exam.routes');
-const homeworkRoutes = require('./routes/homework.routes');
+const announcementRoutes = require('./routes/announcement.routes');
+const notificationRoutes = require('./routes/notification.routes');
 
 const app = express();
 
@@ -16,7 +15,6 @@ const allowedUrls = process.env.ALLOWED_ORIGINS
 
 const corsOptions = {
     origin: (origin, callback) => {
-        // Allow requests with no origin (mobile apps, Postman, etc.)
         if (!origin || allowedUrls.includes(origin)) {
             callback(null, true);
         } else {
@@ -34,30 +32,29 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// MongoDB auto-reconnection middleware - ensures DB is connected before processing requests
+// MongoDB auto-reconnection middleware
 app.use(ensureDbConnection);
 
-// Routes (school-specific)
-app.use('/api/academics/school/:schoolId', timetableRoutes);
-app.use('/api/academics/school/:schoolId', examRoutes);
-app.use('/api/academics/school/:schoolId/homework', homeworkRoutes);
+// Routes
+app.use('/api/notifications/school/:schoolId/announcements', announcementRoutes);
+app.use('/api/notifications/school/:schoolId/notifications', notificationRoutes);
 
 // Health check endpoint
 app.get('/health', (_req, res) => {
-    res.status(200).json({ status: 'OK', message: 'Academics Service is running' });
+    res.status(200).json({ status: 'OK', message: 'Notification Service is running' });
 });
 
 app.get("/", (_req, res) => {
-    res.send(`🎓 SMS Academics Service is running securely`);
+    res.send(`🔔 Notification Service is running`);
 });
 
 // Start server
-const PORT = process.env.PORT || 5003;
+const PORT = process.env.PORT || 5004;
 
 connectDB()
     .then(() => {
         app.listen(PORT, () => {
-            console.log(`🎓 Academics Service is running on port ${PORT}`);
+            console.log(`🔔 Notification Service is running on port ${PORT}`);
         });
     })
     .catch((error) => {

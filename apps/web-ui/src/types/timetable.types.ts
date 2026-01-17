@@ -31,6 +31,11 @@ export interface TimetableConfig {
     periods: Period[];
     isActive: boolean;
     status: 'active' | 'inactive';
+    // Temporary disable fields
+    temporarilyDisabled?: boolean;
+    disabledFrom?: string;
+    disabledTo?: string;
+    disabledReason?: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -48,6 +53,57 @@ export interface UpdateTimetableConfigRequest {
     shifts?: Shift[];
     periods?: Period[];
     isActive?: boolean;
+}
+
+// ==========================================
+// TIMETABLE SCHEDULE (Validity Periods)
+// ==========================================
+
+export type TimetableScheduleStatus = 'active' | 'disabled' | 'draft';
+export type TimetableScheduleType = 'regular' | 'exam_phase' | 'sports_week' | 'vacation' | 'special';
+
+export interface TimetableSchedule {
+    scheduleId: string;
+    schoolId: string;
+    name: string;
+    description?: string;
+    validFrom: string;
+    validTo: string;
+    status: TimetableScheduleStatus;
+    scheduleType: TimetableScheduleType;
+    allowSpecialClasses: boolean;
+    createdBy?: string;
+    disabledBy?: string;
+    disabledAt?: string;
+    notes?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CreateTimetableScheduleRequest {
+    name: string;
+    description?: string;
+    validFrom: string;
+    validTo: string;
+    scheduleType?: TimetableScheduleType;
+    allowSpecialClasses?: boolean;
+    notes?: string;
+}
+
+export interface UpdateTimetableScheduleRequest {
+    name?: string;
+    description?: string;
+    validFrom?: string;
+    validTo?: string;
+    status?: TimetableScheduleStatus;
+    scheduleType?: TimetableScheduleType;
+    allowSpecialClasses?: boolean;
+    notes?: string;
+}
+
+export interface ActiveScheduleResponse {
+    isActive: boolean;
+    data: TimetableSchedule | null;
 }
 
 // ==========================================

@@ -104,6 +104,14 @@ router.delete(
     configController.removeShift
 );
 
+// Toggle timetable temporary disable
+router.patch(
+    "/config/toggle-disable",
+    Authenticated,
+    authorizeRoles("sch_admin"),
+    configController.toggleTimetableDisable
+);
+
 // ==========================================
 // TIMETABLE ENTRY ROUTES
 // ==========================================

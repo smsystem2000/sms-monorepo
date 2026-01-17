@@ -481,6 +481,57 @@ const removeShift = async (req, res) => {
     }
 };
 
+// Toggle temporary disable for timetable
+const toggleTimetableDisable = async (req, res) => {
+    try {
+        const { schoolId } = req.params;
+        const { disabled, disabledFrom, disabledTo, disabledReason } = req.body;
+
+        const schoolDbName = await getSchoolDbName(schoolId);
+        const TimetableConfigModel = getTimetableConfigModel(schoolDbName);
+
+        // Find active config for this school
+        const config = await TimetableConfigModel.findOne({ schoolId, isActive: true });
+
+        if (!config) {
+            return res.status(404).json({
+                success: false,
+                message: "No active timetable configuration found",
+            });
+        }
+
+        // Update disable status
+        config.temporarilyDisabled = disabled !== undefined ? disabled : !config.temporarilyDisabled;
+
+        if (config.temporarilyDisabled) {
+            config.disabledFrom = disabledFrom ? new Date(disabledFrom) : null;
+            config.disabledTo = disabledTo ? new Date(disabledTo) : null;
+            config.disabledReason = disabledReason || "";
+        } else {
+            // Clear disable fields when enabling
+            config.disabledFrom = null;
+            config.disabledTo = null;
+            config.disabledReason = "";
+        }
+
+        await config.save();
+
+        res.status(200).json({
+            success: true,
+            message: config.temporarilyDisabled
+                ? "Timetable temporarily disabled"
+                : "Timetable enabled",
+            data: config,
+        });
+    } catch (error) {
+        console.error("Error toggling timetable disable:", error);
+        res.status(500).json({
+            success: false,
+            message: error.message || "Failed to toggle timetable disable status",
+        });
+    }
+};
+
 module.exports = {
     createConfig,
     getActiveConfig,
@@ -493,4 +544,5 @@ module.exports = {
     removePeriod,
     upsertShift,
     removeShift,
+    toggleTimetableDisable,
 };

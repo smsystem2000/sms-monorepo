@@ -100,6 +100,23 @@ const timetableConfigSchema = new mongoose.Schema(
             enum: ["active", "inactive"],
             default: "active",
         },
+        // Temporary disable feature
+        temporarilyDisabled: {
+            type: Boolean,
+            default: false,
+        },
+        disabledFrom: {
+            type: Date,
+            default: null,
+        },
+        disabledTo: {
+            type: Date,
+            default: null,
+        },
+        disabledReason: {
+            type: String,
+            default: "",
+        },
     },
     {
         timestamps: true,

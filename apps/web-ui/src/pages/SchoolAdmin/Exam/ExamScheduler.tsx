@@ -486,7 +486,8 @@ const ExamDetailView = ({ schoolId, exam, onBack }: { schoolId: string, exam: Ex
         setDownloading(true);
         try {
             const studentName = `${selectedStudent.student?.firstName || ''} ${selectedStudent.student?.lastName || ''}`.trim() || 'Student';
-            const fatherName = selectedStudent.student?.fatherName || selectedStudent.student?.parentName || 'Father Name';
+            const fatherName = selectedStudent.student?.fatherName || selectedStudent.student?.parentName || 'N/A';
+            const fatherNameLabel = selectedStudent.student?.fatherNameLabel || "Father's Name";
             const className = getClassName(selectedStudent.classId);
             const sectionName = getSectionName(selectedStudent.classId, selectedStudent.sectionId);
             const dob = selectedStudent.student?.dateOfBirth
@@ -497,6 +498,7 @@ const ExamDetailView = ({ schoolId, exam, onBack }: { schoolId: string, exam: Ex
                 <AdmitCardPDF
                     studentName={studentName}
                     fatherName={fatherName}
+                    fatherNameLabel={fatherNameLabel}
                     rollNumber={selectedStudent.rollNumber || 'N/A'}
                     studentId={selectedStudent.studentId}
                     className={className}
@@ -513,6 +515,12 @@ const ExamDetailView = ({ schoolId, exam, onBack }: { schoolId: string, exam: Ex
                     academicYear={exam.academicYear || '2025-2026'}
                     startDate={exam.startDate}
                     endDate={exam.endDate}
+                    examSchedule={(schedule?.data || []).map((sch: any) => ({
+                        date: sch.date,
+                        startTime: sch.startTime,
+                        endTime: sch.endTime,
+                        subjectName: getSubjectName(sch.subjectId),
+                    }))}
                 />
             ).toBlob();
 
@@ -920,7 +928,7 @@ const ExamDetailView = ({ schoolId, exam, onBack }: { schoolId: string, exam: Ex
                                     </Box>
                                 </Box>
                                 <Chip
-                                    label="E - ADMIT CARD"
+                                    label="ADMIT CARD"
                                     sx={{ mt: 1, bgcolor: '#ff9800', color: 'white', fontWeight: 700, fontSize: '1rem', py: 2 }}
                                 />
                             </Box>
@@ -947,7 +955,9 @@ const ExamDetailView = ({ schoolId, exam, onBack }: { schoolId: string, exam: Ex
                                                         <TableCell>{selectedStudent.student?.firstName} {selectedStudent.student?.lastName}</TableCell>
                                                     </TableRow>
                                                     <TableRow>
-                                                        <TableCell sx={{ bgcolor: '#f5f5f5', fontWeight: 600 }}>Father's Name</TableCell>
+                                                        <TableCell sx={{ bgcolor: '#f5f5f5', fontWeight: 600 }}>
+                                                            {selectedStudent?.student?.fatherNameLabel || "Father's Name"}
+                                                        </TableCell>
                                                         <TableCell>{selectedStudent.student?.fatherName || selectedStudent.student?.parentName || 'N/A'}</TableCell>
                                                     </TableRow>
                                                     <TableRow>

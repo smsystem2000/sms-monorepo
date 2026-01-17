@@ -7,8 +7,8 @@ import {
     Typography,
     FormControl,
     Skeleton,
-    SelectChangeEvent,
 } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material';
 import { useChildSelector } from '../../context/ChildSelectorContext';
 
 interface ChildSelectorProps {

@@ -79,7 +79,7 @@ const datePickerSlotProps = {
         },
     },
     actionBar: {
-        actions: ['clear', 'today'] as const,
+        actions: ['clear', 'today'] as ('clear' | 'today' | 'cancel' | 'accept')[],
     },
     popper: {
         sx: {

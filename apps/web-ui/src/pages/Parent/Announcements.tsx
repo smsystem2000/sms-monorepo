@@ -23,7 +23,7 @@ import {
 } from '@mui/icons-material';
 import { useGetAnnouncements } from '../../queries/Announcement';
 import TokenService from '../../queries/token/tokenService';
-import type { Announcement, AnnouncementCategory, AnnouncementPriority } from '../../types';
+import type { Announcement, AnnouncementCategory } from '../../types';
 
 const categoryColors: Record<AnnouncementCategory, 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'> = {
     general: 'default',

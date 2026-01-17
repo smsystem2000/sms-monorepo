@@ -15,7 +15,6 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    Fab,
 } from '@mui/material';
 import {
     Add as AddIcon,
@@ -25,9 +24,9 @@ import {
     Warning as WarningIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useGetAnnouncements, useGetMyAnnouncements, useDeleteAnnouncement } from '../../../queries/Announcement';
+import { useGetAnnouncements, useDeleteAnnouncement } from '../../../queries/Announcement';
 import TokenService from '../../../queries/token/tokenService';
-import type { Announcement, AnnouncementCategory, AnnouncementPriority } from '../../../types';
+import type { Announcement, AnnouncementCategory } from '../../../types';
 
 const categoryColors: Record<AnnouncementCategory, 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'> = {
     general: 'default',

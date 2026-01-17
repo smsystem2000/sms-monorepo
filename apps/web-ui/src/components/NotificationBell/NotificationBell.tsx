@@ -12,7 +12,6 @@ import {
     Button,
     Divider,
     Skeleton,
-    Chip,
 } from '@mui/material';
 import {
     Notifications as NotificationsIcon,
@@ -56,7 +55,7 @@ const NotificationBell: React.FC = () => {
 
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
 
-    const { data: unreadData, isLoading: loadingCount } = useGetUnreadCount(schoolId);
+    const { data: unreadData } = useGetUnreadCount(schoolId);
     const { data: notificationsData, isLoading: loadingNotifications } = useGetMyNotifications(schoolId, { limit: 5 });
     const markAsRead = useMarkAsRead(schoolId);
     const markAllAsRead = useMarkAllAsRead(schoolId);

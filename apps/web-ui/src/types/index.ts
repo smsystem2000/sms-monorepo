@@ -744,3 +744,207 @@ export interface UpdateMenuPayload {
   hasSubmenu?: boolean;
   parentId?: string;
 }
+
+// ==========================================
+// ANNOUNCEMENT TYPES
+// ==========================================
+export type AnnouncementCategory = 'general' | 'academic' | 'exam' | 'holiday' | 'event' | 'fee' | 'emergency';
+export type AnnouncementPriority = 'low' | 'normal' | 'high' | 'urgent';
+export type AnnouncementTargetAudience = 'all' | 'students' | 'teachers' | 'parents' | 'specific_class';
+export type AnnouncementStatus = 'active' | 'archived';
+
+export interface Announcement {
+  announcementId: string;
+  schoolId: string;
+  title: string;
+  content: string;
+  category: AnnouncementCategory;
+  priority: AnnouncementPriority;
+  targetAudience: AnnouncementTargetAudience;
+  targetClasses?: string[];
+  attachmentUrl?: string;
+  publishDate: string;
+  expiryDate?: string;
+  isPublished: boolean;
+  createdBy: string;
+  createdByRole: 'sch_admin' | 'teacher';
+  createdByName?: string;
+  status: AnnouncementStatus;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateAnnouncementPayload {
+  title: string;
+  content: string;
+  category?: AnnouncementCategory;
+  priority?: AnnouncementPriority;
+  targetAudience?: AnnouncementTargetAudience;
+  targetClasses?: string[];
+  attachmentUrl?: string;
+  publishDate?: string;
+  expiryDate?: string;
+}
+
+export interface UpdateAnnouncementPayload {
+  title?: string;
+  content?: string;
+  category?: AnnouncementCategory;
+  priority?: AnnouncementPriority;
+  targetAudience?: AnnouncementTargetAudience;
+  targetClasses?: string[];
+  attachmentUrl?: string;
+  expiryDate?: string;
+  isPublished?: boolean;
+  status?: AnnouncementStatus;
+}
+
+// ==========================================
+// HOMEWORK TYPES
+// ==========================================
+export type HomeworkStatus = 'active' | 'completed' | 'cancelled';
+
+export interface Homework {
+  homeworkId: string;
+  schoolId: string;
+  classId: string;
+  sectionId?: string;
+  subjectId: string;
+  teacherId: string;
+  title: string;
+  description: string;
+  attachmentUrl?: string;
+  assignedDate: string;
+  dueDate: string;
+  status: HomeworkStatus;
+  // Enriched fields
+  subjectName?: string;
+  teacherName?: string;
+  className?: string;
+  isOverdue?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateHomeworkPayload {
+  classId: string;
+  sectionId?: string;
+  subjectId: string;
+  title: string;
+  description: string;
+  attachmentUrl?: string;
+  dueDate: string;
+}
+
+export interface UpdateHomeworkPayload {
+  title?: string;
+  description?: string;
+  attachmentUrl?: string;
+  dueDate?: string;
+  status?: HomeworkStatus;
+}
+
+// ==========================================
+// NOTIFICATION TYPES
+// ==========================================
+export type NotificationType =
+  | 'absence_alert'
+  | 'leave_status'
+  | 'announcement'
+  | 'homework_assigned'
+  | 'homework_due'
+  | 'exam_scheduled'
+  | 'result_published'
+  | 'general';
+
+export type NotificationReferenceType = 'announcement' | 'homework' | 'leave' | 'attendance' | 'exam' | 'result' | null;
+
+export interface Notification {
+  notificationId: string;
+  schoolId: string;
+  userId: string;
+  userRole: 'student' | 'teacher' | 'parent' | 'sch_admin';
+  type: NotificationType;
+  title: string;
+  message: string;
+  referenceId?: string;
+  referenceType?: NotificationReferenceType;
+  isRead: boolean;
+  readAt?: string;
+  metadata?: Record<string, unknown>;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface NotificationFilters {
+  isRead?: boolean;
+  type?: NotificationType;
+  page?: number;
+  limit?: number;
+}
+
+// ==========================================
+// PARENT PORTAL TYPES
+// ==========================================
+export interface ChildStats {
+  studentId: string;
+  name: string;
+  firstName: string;
+  lastName: string;
+  class: string;
+  section?: string;
+  rollNumber?: string;
+  profileImage?: string;
+  attendancePercentage: number;
+  pendingLeaves: number;
+  totalDays: number;
+  presentDays: number;
+}
+
+export interface RecentAbsence {
+  studentId: string;
+  studentName: string;
+  date: string;
+  status: string;
+}
+
+export interface ParentDashboardStats {
+  childrenCount: number;
+  children: ChildStats[];
+  totalPendingLeaves: number;
+  recentAbsences: RecentAbsence[];
+  parentName: string;
+}
+
+export interface ChildTeacherInfo {
+  teacherId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  profileImage?: string;
+  subjects?: string[];
+  subjectNames?: string[];
+  isClassTeacher: boolean;
+}
+
+export interface ChildAttendanceData {
+  attendance: AttendanceSimple[];
+  summary: {
+    total: number;
+    present: number;
+    absent: number;
+    late: number;
+    halfDay: number;
+    leave: number;
+    percentage: string;
+  };
+}
+
+export interface AbsentRecord {
+  date: string;
+  status: string;
+  leaveApplied: boolean;
+  leaveStatus?: LeaveStatus;
+}
+

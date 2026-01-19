@@ -87,14 +87,14 @@ const SchoolPage = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap', position: 'relative', zIndex: 1 }}>
                     <Avatar
                         src={school.schoolLogo || undefined}
-                        variant="rounded"
+                        variant="circular"
                         sx={{
                             width: 100,
                             height: 100,
-                            bgcolor: 'white',
-                            p: 1,
+                            bgcolor: 'transparent',
+                            border: '3px solid rgba(255,255,255,0.3)',
                             '& img': {
-                                objectFit: 'contain'
+                                objectFit: 'cover'
                             }
                         }}
                     >

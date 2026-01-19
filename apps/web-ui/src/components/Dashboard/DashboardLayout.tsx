@@ -79,15 +79,14 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                         {school?.schoolLogo && (
                             <Avatar
                                 src={school.schoolLogo}
-                                variant="rounded"
+                                variant="square"
                                 sx={{
                                     width: 48,
                                     height: 48,
-                                    bgcolor: '#ffffff',
+                                    bgcolor: 'transparent',
                                     p: 0,
-                                    border: '1px solid #e2e8f0',
                                     '& img': {
-                                        objectFit: 'contain',
+                                        objectFit: 'cover',
                                         width: '100%',
                                         height: '100%'
                                     }

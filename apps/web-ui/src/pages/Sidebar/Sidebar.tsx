@@ -9,6 +9,7 @@ import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import type { SideBarMenuItemType } from './SidebarUtils';
 import TokenService from '../../queries/token/tokenService';
+import { useUserStore } from '../../stores/userStore';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -24,6 +25,16 @@ const Sidebar = ({ isOpen, onClose, role, onLogout }: SidebarProps) => {
   const [hoveredSubItem, setHoveredSubItem] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Get user and school data from Zustand store
+  const { user, fetchProfile } = useUserStore();
+
+  // Fetch profile on component mount
+  useEffect(() => {
+    if (!user) {
+      fetchProfile();
+    }
+  }, [user, fetchProfile]);
 
   useEffect(() => {
     if (closingItem) {
@@ -79,9 +90,10 @@ const Sidebar = ({ isOpen, onClose, role, onLogout }: SidebarProps) => {
 
   const menuItems = getMenuItems();
 
-  // Get logged-in user's name from token
-  const userName = TokenService.getUserName();
-  const name = userName || "User";
+  // Get user's full name
+  const userName = user ? `${user.firstName} ${user.lastName}` : TokenService.getUserName() || "User";
+  const profileImage = user?.profileImage || '';
+
 
   return (
     <>
@@ -127,10 +139,9 @@ const Sidebar = ({ isOpen, onClose, role, onLogout }: SidebarProps) => {
           }}
         >
           <Toolbar className="navbar-toolbar" />
-
-          {/* Header */}
+          {/* User Profile Section */}
           <div
-            className="sidebar-header"
+            className="sidebar-user-profile"
             style={{
               padding: '20px',
               borderBottom: '1px solid #334155',
@@ -141,8 +152,8 @@ const Sidebar = ({ isOpen, onClose, role, onLogout }: SidebarProps) => {
             }}
           >
             <Avatar
-              alt="User Avatar"
-              src={''}
+              alt={userName}
+              src={profileImage}
               sx={{
                 width: 60,
                 height: 60,
@@ -151,26 +162,16 @@ const Sidebar = ({ isOpen, onClose, role, onLogout }: SidebarProps) => {
                 marginBottom: '10px',
               }}
             >
-              {name?.charAt(0).toUpperCase()}
+              {userName?.charAt(0).toUpperCase()}
             </Avatar>
-            <div className="welcome-text" style={{ color: '#fff' }}>
-              <Typography style={{
-                fontWeight: '600',
-                color: 'white',
-                fontSize: '1rem',
-                whiteSpace: 'nowrap',
-              }}>
-                {name}
-              </Typography>
-              <Typography style={{
-                color: '#94a3b8',
-                fontSize: '0.75rem',
-                textTransform: 'capitalize',
-                whiteSpace: 'nowrap',
-              }}>
-                {role?.replace('_', ' ') || 'User'}
-              </Typography>
-            </div>
+            <Typography style={{
+              fontWeight: '600',
+              color: 'white',
+              fontSize: '1rem',
+              whiteSpace: 'nowrap',
+            }}>
+              {userName}
+            </Typography>
           </div>
 
           {/* Menu Items */}

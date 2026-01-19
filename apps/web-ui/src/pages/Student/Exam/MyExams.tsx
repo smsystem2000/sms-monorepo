@@ -40,9 +40,9 @@ import {
     useGetExams,
     useGetExamSchedule
 } from '../../../queries/Exam';
-import { useGetStudentById } from '../../../queries/Student';
 import { useGetSubjects } from '../../../queries/Subject';
 import TokenService from '../../../queries/token/tokenService';
+import { useUserStore } from '../../../stores/userStore';
 import { AdmitCardPDF } from '../../../components/PDFLayouts';
 
 const MyExams = () => {
@@ -173,8 +173,8 @@ const AdmitCardBlock = ({ schoolId, exam, studentId }: { schoolId: string, exam:
         severity: 'info'
     });
 
+    const { user: student } = useUserStore();
     const { data: admitCard, isLoading } = useGetAdmitCard(schoolId, exam.examId, studentId);
-    const { data: studentData } = useGetStudentById(schoolId, studentId);
     const { data: scheduleData } = useGetExamSchedule(schoolId, exam.examId);
     const { data: subjectsData } = useGetSubjects(schoolId);
 
@@ -190,8 +190,6 @@ const AdmitCardBlock = ({ schoolId, exam, studentId }: { schoolId: string, exam:
     // Get exam schedule for this student's class
     const examSchedule = scheduleData?.data || [];
 
-    // Get data from student profile API - cast to any for extended API fields
-    const student = studentData?.data as any;
     const admitCardData = admitCard?.data;
 
     // Student details from profile API

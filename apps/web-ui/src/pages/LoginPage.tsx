@@ -21,6 +21,7 @@ import { useLogin } from '../queries/Auth';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import TokenService from '../queries/token/tokenService';
+import { useUserStore } from '../stores/userStore';
 
 // Define TypeScript interfaces for props
 interface LoginForm {
@@ -47,6 +48,7 @@ const LoginPage: React.FC = () => {
   const isLoading = loginMutation.isPending;
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { fetchProfile } = useUserStore();
 
 
   // Event handlers
@@ -108,10 +110,14 @@ const LoginPage: React.FC = () => {
     }
 
     loginMutation.mutate(formData, {
-      onSuccess: (res: any) => {
+      onSuccess: async (res: any) => {
         console.log("Login response:", res);
         if (res?.data?.token) {
           login(res.data.token);
+
+          // Fetch profile data immediately after login to populate Zustand store
+          await fetchProfile();
+
           // Get role from token and redirect accordingly
           const role = TokenService.getRole();
           const redirectPath = getRedirectPath(role || 'super_admin');

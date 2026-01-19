@@ -23,34 +23,32 @@ import {
     Edit as EditIcon,
     MenuBook as MenuBookIcon,
 } from '@mui/icons-material';
-import TokenService from '../../queries/token/tokenService';
+
 import RequestChangeDialog from '../../components/Dialogs/RequestChangeDialog';
-import { useGetTeacherById } from '../../queries/Teacher';
+import { useUserStore } from '../../stores/userStore';
 
 const TeacherProfile = () => {
     const [requestDialogOpen, setRequestDialogOpen] = useState(false);
     const [requestFieldType, setRequestFieldType] = useState<"email_change" | "phone_change" | "general">("general");
     const [currentFieldValue, setCurrentFieldValue] = useState("");
 
-    // Get IDs from token for API calls
-    const decodedToken = TokenService.decodeToken();
-    const schoolId = decodedToken?.schoolId || '';
-    const teacherId = decodedToken?.userId || decodedToken?.teacherId || '';
+    // Get user and school data from Zustand store
+    const { user: teacher, school, isLoading: teacherLoading, error: teacherError } = useUserStore();
 
-    // Fetch full teacher details from API (includes aggregated schoolName, subjectNames)
-    const { data: teacherData, isLoading: teacherLoading, error: teacherError } = useGetTeacherById(schoolId, teacherId);
-    const teacher = teacherData?.data;
+    // Derivations for legacy compatibility and clear naming
+    const schoolId = school?.schoolId || '';
+    const teacherId = teacher?.userId || '';
 
-    // Use aggregated data directly from API response
-    const schoolName = teacher?.schoolName || schoolId;
+    // Use aggregated data directly from store
+    const schoolName = teacher?.schoolName || school?.schoolName || schoolId;
     const subjectNames = teacher?.subjectNames || teacher?.subjects || [];
 
-    // User details from API
+    // User details from store
     const userName = teacher?.firstName
         ? `${teacher.firstName} ${teacher.lastName || ''}`.trim()
-        : decodedToken?.email?.split('@')[0] || 'User';
+        : teacher?.email?.split('@')[0] || 'User';
     const userEmail = teacher?.email || '';
-    const userPhone = teacher?.phone || teacher?.phoneNumber || '';
+    const userPhone = teacher?.phone || '';
     const department = teacher?.department || '';
 
     const openRequestDialog = (type: "email_change" | "phone_change" | "general", currentValue: string = "") => {

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Box, AppBar, Toolbar, IconButton, Typography } from '@mui/material';
+import { Box, AppBar, Toolbar, IconButton, Typography, Avatar } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 // import LogoutIcon from '@mui/icons-material/Logout';
 import Sidebar from '../../pages/Sidebar/Sidebar';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useUserStore } from '../../stores/userStore';
 
 interface DashboardLayoutProps {
     children: React.ReactNode;
@@ -16,6 +17,16 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 900);
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+
+    // Get school and user data from Zustand store
+    const { school, fetchProfile, clearStore } = useUserStore();
+
+    // Fetch profile on mount if not already loaded
+    useEffect(() => {
+        if (user) {
+            fetchProfile();
+        }
+    }, [user, fetchProfile]);
 
     // Track window resize to update isMobile state
     useEffect(() => {
@@ -37,9 +48,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     };
 
     const handleLogout = () => {
+        clearStore(); // Clear Zustand store
         logout();
         navigate('/login');
     };
+
+    const schoolName = school?.schoolName || 'SMS Platform';
 
     return (
         <Box sx={{ display: 'flex', minHeight: '100vh' }}>
@@ -61,9 +75,34 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                     >
                         <MenuIcon />
                     </IconButton>
-                    <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-                        SMS Platform
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, gap: 2 }}>
+                        {school?.schoolLogo && (
+                            <Avatar
+                                src={school.schoolLogo}
+                                variant="rounded"
+                                sx={{
+                                    width: 48,
+                                    height: 48,
+                                    bgcolor: '#ffffff',
+                                    p: 0,
+                                    border: '1px solid #e2e8f0',
+                                    '& img': {
+                                        objectFit: 'contain',
+                                        width: '100%',
+                                        height: '100%'
+                                    }
+                                }}
+                            />
+                        )}
+                        <Typography
+                            variant="h5"
+                            noWrap
+                            component="div"
+                            sx={{ fontWeight: 700, ml: 1 }}
+                        >
+                            {schoolName}
+                        </Typography>
+                    </Box>
                     {/* <Button
                         color="inherit"
                         onClick={handleLogout}

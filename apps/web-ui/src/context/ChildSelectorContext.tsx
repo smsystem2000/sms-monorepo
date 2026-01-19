@@ -21,7 +21,11 @@ interface ChildSelectorProviderProps {
 
 export const ChildSelectorProvider: React.FC<ChildSelectorProviderProps> = ({ children }) => {
     const schoolId = TokenService.getSchoolId() || '';
-    const { data, isLoading, error } = useGetMyChildren(schoolId);
+    const role = TokenService.getRole();
+    const isParent = role === 'parent';
+
+    // Only fetch children for parent role
+    const { data, isLoading, error } = useGetMyChildren(isParent ? schoolId : '');
 
     const [selectedChild, setSelectedChildState] = useState<(Student & { className?: string; sectionName?: string }) | null>(null);
 

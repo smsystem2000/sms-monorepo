@@ -35,6 +35,7 @@ import {
     InputAdornment
 } from '@mui/material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
+import EditIcon from '@mui/icons-material/Edit';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CardMembershipIcon from '@mui/icons-material/CardMembership';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -48,6 +49,8 @@ import { pdf } from '@react-pdf/renderer';
 import { useAuth } from '../../../context/AuthContext';
 import {
     useCreateExam,
+    useUpdateExam,
+    useDeleteExam,
     useGetExams,
     useGetExamTerms,
     useGetExamTypes,
@@ -108,7 +111,7 @@ const ExamListView = ({ schoolId, onSelect }: { schoolId: string, onSelect: (exa
 
     const createExam = useCreateExam(schoolId);
 
-    const [formData, setFormData] = useState<CreateExamRequest>({
+    const [formData, setFormData] = useState<CreateExamRequest & { status?: string }>({
         name: '',
         typeId: '',
         termId: '',
@@ -116,18 +119,81 @@ const ExamListView = ({ schoolId, onSelect }: { schoolId: string, onSelect: (exa
         classes: [],
         startDate: '',
         endDate: '',
-        gradingSystemId: ''
+        gradingSystemId: '',
+        status: 'draft'
     });
 
+    const [editingExam, setEditingExam] = useState<any>(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [examToDelete, setExamToDelete] = useState<any>(null);
+
+    const updateExam = useUpdateExam(schoolId);
+    const deleteExam = useDeleteExam(schoolId);
+
+    const handleEdit = (exam: any) => {
+        setEditingExam(exam);
+        setFormData({
+            name: exam.name,
+            typeId: typeof exam.typeId === 'object' ? exam.typeId._id : exam.typeId,
+            termId: typeof exam.termId === 'object' ? exam.termId._id : exam.termId,
+            academicYear: exam.academicYear,
+            classes: exam.classes,
+            startDate: exam.startDate?.split('T')[0] || '',
+            endDate: exam.endDate?.split('T')[0] || '',
+            gradingSystemId: typeof exam.gradingSystemId === 'object' ? exam.gradingSystemId._id : exam.gradingSystemId,
+            status: exam.status || 'draft'
+        });
+        setOpen(true);
+    };
+
+    const handleDeleteClick = (exam: any, event: React.MouseEvent) => {
+        event.stopPropagation();
+        setExamToDelete(exam);
+        setDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = () => {
+        if (examToDelete) {
+            deleteExam.mutate(examToDelete.examId, {
+                onSuccess: () => {
+                    setDeleteDialogOpen(false);
+                    setExamToDelete(null);
+                }
+            });
+        }
+    };
+
     const handleSubmit = () => {
-        createExam.mutate(formData, {
-            onSuccess: () => {
-                setOpen(false);
-                setFormData({
-                    name: '', typeId: '', termId: '', academicYear: '2025-2026',
-                    classes: [], startDate: '', endDate: '', gradingSystemId: ''
-                });
-            }
+        if (editingExam) {
+            updateExam.mutate({ examId: editingExam.examId, data: formData }, {
+                onSuccess: () => {
+                    setOpen(false);
+                    setEditingExam(null);
+                    setFormData({
+                        name: '', typeId: '', termId: '', academicYear: '2025-2026',
+                        classes: [], startDate: '', endDate: '', gradingSystemId: '', status: 'draft'
+                    });
+                }
+            });
+        } else {
+            createExam.mutate(formData, {
+                onSuccess: () => {
+                    setOpen(false);
+                    setFormData({
+                        name: '', typeId: '', termId: '', academicYear: '2025-2026',
+                        classes: [], startDate: '', endDate: '', gradingSystemId: '', status: 'draft'
+                    });
+                }
+            });
+        }
+    };
+
+    const handleClose = () => {
+        setOpen(false);
+        setEditingExam(null);
+        setFormData({
+            name: '', typeId: '', termId: '', academicYear: '2025-2026',
+            classes: [], startDate: '', endDate: '', gradingSystemId: '', status: 'draft'
         });
     };
 
@@ -179,14 +245,59 @@ const ExamListView = ({ schoolId, onSelect }: { schoolId: string, onSelect: (exa
                                         borderRadius: 3,
                                         overflow: 'hidden',
                                         cursor: 'pointer',
+                                        position: 'relative',
                                         transition: 'all 0.3s ease',
                                         '&:hover': {
                                             boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
                                             transform: 'translateY(-4px)'
+                                        },
+                                        '&:hover .action-buttons': {
+                                            opacity: 1
                                         }
                                     }}
                                     onClick={() => onSelect(exam)}
                                 >
+                                    {/* Action Buttons Overlay */}
+                                    <Box
+                                        className="action-buttons"
+                                        sx={{
+                                            position: 'absolute',
+                                            top: 8,
+                                            right: 8,
+                                            display: 'flex',
+                                            gap: 1,
+                                            opacity: 0,
+                                            transition: 'opacity 0.3s ease',
+                                            zIndex: 10
+                                        }}
+                                    >
+                                        <IconButton
+                                            size="small"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleEdit(exam);
+                                            }}
+                                            sx={{
+                                                bgcolor: 'background.paper',
+                                                boxShadow: 2,
+                                                '&:hover': { bgcolor: 'primary.light' }
+                                            }}
+                                        >
+                                            <EditIcon fontSize="small" />
+                                        </IconButton>
+                                        <IconButton
+                                            size="small"
+                                            onClick={(e) => handleDeleteClick(exam, e)}
+                                            sx={{
+                                                bgcolor: 'background.paper',
+                                                boxShadow: 2,
+                                                '&:hover': { bgcolor: 'error.light', color: 'error.contrastText' }
+                                            }}
+                                        >
+                                            <DeleteIcon fontSize="small" />
+                                        </IconButton>
+                                    </Box>
+
                                     {/* Card Header with gradient */}
                                     <Box
                                         sx={{
@@ -241,8 +352,8 @@ const ExamListView = ({ schoolId, onSelect }: { schoolId: string, onSelect: (exa
                 </Grid>
             )}
 
-            <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth>
-                <DialogTitle>Create New Exam Event</DialogTitle>
+            <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+                <DialogTitle>{editingExam ? 'Edit Exam Event' : 'Create New Exam Event'}</DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
                         <TextField
@@ -278,6 +389,21 @@ const ExamListView = ({ schoolId, onSelect }: { schoolId: string, onSelect: (exa
                                 </FormControl>
                             </Grid>
                         </Grid>
+
+                        <FormControl fullWidth>
+                            <InputLabel>Status</InputLabel>
+                            <Select
+                                value={formData.status}
+                                label="Status"
+                                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                            >
+                                <MenuItem value="draft">Draft</MenuItem>
+                                <MenuItem value="scheduled">Scheduled</MenuItem>
+                                <MenuItem value="ongoing">Ongoing</MenuItem>
+                                <MenuItem value="published">Published</MenuItem>
+                                <MenuItem value="closed">Closed</MenuItem>
+                            </Select>
+                        </FormControl>
 
                         <FormControl fullWidth>
                             <InputLabel>Grading System</InputLabel>
@@ -338,9 +464,26 @@ const ExamListView = ({ schoolId, onSelect }: { schoolId: string, onSelect: (exa
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setOpen(false)}>Cancel</Button>
-                    <Button variant="contained" onClick={handleSubmit} disabled={createExam.isPending}>
-                        {createExam.isPending ? 'Creating...' : 'Create Exam'}
+                    <Button onClick={handleClose}>Cancel</Button>
+                    <Button variant="contained" onClick={handleSubmit} disabled={createExam.isPending || updateExam.isPending}>
+                        {(createExam.isPending || updateExam.isPending) ? 'Saving...' : (editingExam ? 'Update Exam' : 'Create Exam')}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+                <DialogTitle>Delete Exam</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Are you sure you want to delete <strong>{examToDelete?.name}</strong>?
+                        This action cannot be undone and will remove all associated schedules and data.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+                    <Button variant="contained" color="error" onClick={confirmDelete} disabled={deleteExam.isPending}>
+                        {deleteExam.isPending ? 'Deleting...' : 'Delete'}
                     </Button>
                 </DialogActions>
             </Dialog>

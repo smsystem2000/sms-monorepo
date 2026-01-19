@@ -13,7 +13,7 @@ const {
 
 // All routes require parent authentication
 router.use(Authenticated);
-router.use(authorizeRoles('parent'));
+router.use(authorizeRoles('parent', 'sch_admin'));
 
 // Dashboard stats
 router.get('/dashboard', getDashboardStats);

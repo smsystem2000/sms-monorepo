@@ -7,14 +7,7 @@ import { MyTimetable } from '../Student/Timetable';
 const ParentTimetable: React.FC = () => {
     const { selectedChild, isLoading } = useChildSelector();
 
-    if (!selectedChild && !isLoading) {
-        return (
-            <Box sx={{ p: 3 }}>
-                <Alert severity="info">Please select a child to view their timetable.</Alert>
-            </Box>
-        );
-    }
-
+    // Show loading while children are being loaded
     if (isLoading) {
         return (
             <Box sx={{ p: 3 }}>
@@ -23,8 +16,16 @@ const ParentTimetable: React.FC = () => {
         );
     }
 
-    // Render the student timetable component - it will fetch based on selected child
-    return <MyTimetable />;
+    if (!selectedChild) {
+        return (
+            <Box sx={{ p: 3 }}>
+                <Alert severity="info">Please select a child to view their timetable.</Alert>
+            </Box>
+        );
+    }
+
+    // Render the student timetable component with child's class/section
+    return <MyTimetable studentClassId={selectedChild.class} studentSectionId={selectedChild.section} />;
 };
 
 export default ParentTimetable;

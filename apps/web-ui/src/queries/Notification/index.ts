@@ -31,7 +31,7 @@ export const useGetMyNotifications = (
         queryKey: notificationKeys.list(schoolId, filters),
         queryFn: () => useApi<ApiResponse<Notification[]>>(
             "GET",
-            `/api/notifications/school/${schoolId}/notifications`,
+            `/api/school/${schoolId}/notifications`,
             undefined,
             filters as Record<string, unknown>
         ),
@@ -45,7 +45,7 @@ export const useGetUnreadCount = (schoolId: string) => {
         queryKey: notificationKeys.unreadCount(schoolId),
         queryFn: () => useApi<ApiResponse<{ unreadCount: number }>>(
             "GET",
-            `/api/notifications/school/${schoolId}/notifications/unread-count`
+            `/api/school/${schoolId}/notifications/unread-count`
         ),
         enabled: !!schoolId,
         refetchInterval: 30000, // Poll every 30 seconds
@@ -59,7 +59,7 @@ export const useMarkAsRead = (schoolId: string) => {
     return useMutation({
         mutationFn: (notificationId: string) => useApi(
             "PUT",
-            `/api/notifications/school/${schoolId}/notifications/${notificationId}/read`
+            `/api/school/${schoolId}/notifications/${notificationId}/read`
         ),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: notificationKeys.lists() });
@@ -75,7 +75,7 @@ export const useMarkAllAsRead = (schoolId: string) => {
     return useMutation({
         mutationFn: () => useApi(
             "PUT",
-            `/api/notifications/school/${schoolId}/notifications/mark-all-read`
+            `/api/school/${schoolId}/notifications/mark-all-read`
         ),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: notificationKeys.lists() });
@@ -91,7 +91,7 @@ export const useDeleteNotification = (schoolId: string) => {
     return useMutation({
         mutationFn: (notificationId: string) => useApi(
             "DELETE",
-            `/api/notifications/school/${schoolId}/notifications/${notificationId}`
+            `/api/school/${schoolId}/notifications/${notificationId}`
         ),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: notificationKeys.lists() });

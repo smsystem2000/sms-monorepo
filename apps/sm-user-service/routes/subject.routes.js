@@ -16,7 +16,7 @@ const { Authenticated, authorizeRoles } = require("@sms/shared/middlewares");
 router.post("/", Authenticated, authorizeRoles("sch_admin"), createSubject);
 
 // GET /api/school/:schoolId/subjects - Get all subjects
-router.get("/", Authenticated, authorizeRoles("sch_admin", "teacher"), getAllSubjects);
+router.get("/", Authenticated, authorizeRoles("sch_admin", "teacher", "parent"), getAllSubjects);
 
 // GET /api/school/:schoolId/subjects/:id - Get subject by ID
 router.get("/:id", Authenticated, authorizeRoles("sch_admin", "teacher"), getSubjectById);

@@ -24,8 +24,8 @@ const connectDB = async () => {
 
         // Serverless-optimized connection options with auto-reconnection
         const options = {
-            serverSelectionTimeoutMS: 15000,
-            socketTimeoutMS: 45000,
+            serverSelectionTimeoutMS: 30000,
+            socketTimeoutMS: 90000,
             maxPoolSize: 10,
             minPoolSize: 1,
             maxIdleTimeMS: 10000,

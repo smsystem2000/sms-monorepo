@@ -33,7 +33,7 @@ export const useGetAnnouncements = (
         queryKey: announcementKeys.list(schoolId, filters),
         queryFn: () => useApi<ApiResponse<Announcement[]>>(
             "GET",
-            `/api/notifications/school/${schoolId}/announcements`,
+            `/api/school/${schoolId}/announcements`,
             undefined,
             filters as Record<string, unknown>
         ),
@@ -47,7 +47,7 @@ export const useGetAnnouncementById = (schoolId: string, announcementId: string)
         queryKey: announcementKeys.detail(schoolId, announcementId),
         queryFn: () => useApi<ApiResponse<Announcement>>(
             "GET",
-            `/api/notifications/school/${schoolId}/announcements/${announcementId}`
+            `/api/school/${schoolId}/announcements/${announcementId}`
         ),
         enabled: !!schoolId && !!announcementId,
     });
@@ -59,7 +59,7 @@ export const useGetMyAnnouncements = (schoolId: string) => {
         queryKey: announcementKeys.my(schoolId),
         queryFn: () => useApi<ApiResponse<Announcement[]>>(
             "GET",
-            `/api/notifications/school/${schoolId}/announcements/my`
+            `/api/school/${schoolId}/announcements/my`
         ),
         enabled: !!schoolId,
     });
@@ -72,7 +72,7 @@ export const useCreateAnnouncement = (schoolId: string) => {
     return useMutation({
         mutationFn: (payload: CreateAnnouncementPayload) => useApi(
             "POST",
-            `/api/notifications/school/${schoolId}/announcements`,
+            `/api/school/${schoolId}/announcements`,
             payload
         ),
         onSuccess: () => {
@@ -89,7 +89,7 @@ export const useUpdateAnnouncement = (schoolId: string) => {
     return useMutation({
         mutationFn: ({ announcementId, ...payload }: UpdateAnnouncementPayload & { announcementId: string }) => useApi(
             "PUT",
-            `/api/notifications/school/${schoolId}/announcements/${announcementId}`,
+            `/api/school/${schoolId}/announcements/${announcementId}`,
             payload
         ),
         onSuccess: (_, variables) => {
@@ -107,7 +107,7 @@ export const useDeleteAnnouncement = (schoolId: string) => {
     return useMutation({
         mutationFn: (announcementId: string) => useApi(
             "DELETE",
-            `/api/notifications/school/${schoolId}/announcements/${announcementId}`
+            `/api/school/${schoolId}/announcements/${announcementId}`
         ),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: announcementKeys.lists() });

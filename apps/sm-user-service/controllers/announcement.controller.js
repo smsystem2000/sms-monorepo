@@ -3,14 +3,15 @@ const { getSchoolDbName } = require("../utils/schoolDbHelper");
 const { AnnouncementSchema: announcementSchema, NotificationSchema: notificationSchema, StudentSchema: studentSchema, ParentSchema: parentSchema, TeacherSchema: teacherSchema } = require("@sms/shared");
 
 // Helper to get models for a specific school
-const getModels = (schoolDbName) => {
+const getAnnouncementModels = (schoolDbName) => {
     const schoolDb = getSchoolDbConnection(schoolDbName);
+    // Use mongoose's internal model cache - models are registered once per connection
     return {
-        Announcement: schoolDb.model('Announcement', announcementSchema),
-        Notification: schoolDb.model('Notification', notificationSchema),
-        Student: schoolDb.model('Student', studentSchema),
-        Parent: schoolDb.model('Parent', parentSchema),
-        Teacher: schoolDb.model('Teacher', teacherSchema),
+        Announcement: schoolDb.models.Announcement || schoolDb.model('Announcement', announcementSchema),
+        Notification: schoolDb.models.Notification || schoolDb.model('Notification', notificationSchema),
+        Student: schoolDb.models.Student || schoolDb.model('Student', studentSchema),
+        Parent: schoolDb.models.Parent || schoolDb.model('Parent', parentSchema),
+        Teacher: schoolDb.models.Teacher || schoolDb.model('Teacher', teacherSchema),
     };
 };
 
@@ -24,19 +25,9 @@ const generateAnnouncementId = async (AnnouncementModel) => {
     return 'ANN00001';
 };
 
-// Generate notification ID
-const generateNotificationId = async (NotificationModel) => {
-    const lastNotification = await NotificationModel.findOne().sort({ createdAt: -1 });
-    if (lastNotification && lastNotification.notificationId) {
-        const lastNum = parseInt(lastNotification.notificationId.replace('NOTIF', ''));
-        return `NOTIF${String(lastNum + 1).padStart(5, '0')}`;
-    }
-    return 'NOTIF00001';
-};
-
 // ==========================================
 // CREATE ANNOUNCEMENT
-// POST /api/notifications/school/:schoolId/announcements
+// POST /api/school/:schoolId/announcements
 // ==========================================
 const createAnnouncement = async (req, res) => {
     try {
@@ -61,7 +52,7 @@ const createAnnouncement = async (req, res) => {
         }
 
         const schoolDbName = await getSchoolDbName(schoolId);
-        const { Announcement, Notification, Student, Parent, Teacher } = getModels(schoolDbName);
+        const { Announcement, Notification, Student, Parent, Teacher } = getAnnouncementModels(schoolDbName);
 
         const announcementId = await generateAnnouncementId(Announcement);
 
@@ -168,7 +159,7 @@ const createAnnouncementNotifications = async (Notification, Student, Parent, Te
 
 // ==========================================
 // GET ALL ANNOUNCEMENTS
-// GET /api/notifications/school/:schoolId/announcements
+// GET /api/school/:schoolId/announcements
 // ==========================================
 const getAllAnnouncements = async (req, res) => {
     try {
@@ -177,7 +168,7 @@ const getAllAnnouncements = async (req, res) => {
         const { role, userId, classId, studentId } = req.user;
 
         const schoolDbName = await getSchoolDbName(schoolId);
-        const { Announcement, Student } = getModels(schoolDbName);
+        const { Announcement, Student } = getAnnouncementModels(schoolDbName);
 
         let query = { schoolId, status: status || 'active', isPublished: true };
 
@@ -260,7 +251,7 @@ const getAllAnnouncements = async (req, res) => {
 
 // ==========================================
 // GET MY ANNOUNCEMENTS (Teacher)
-// GET /api/notifications/school/:schoolId/announcements/my
+// GET /api/school/:schoolId/announcements/my
 // ==========================================
 const getMyAnnouncements = async (req, res) => {
     try {
@@ -268,7 +259,7 @@ const getMyAnnouncements = async (req, res) => {
         const { userId } = req.user;
 
         const schoolDbName = await getSchoolDbName(schoolId);
-        const { Announcement } = getModels(schoolDbName);
+        const { Announcement } = getAnnouncementModels(schoolDbName);
 
         const announcements = await Announcement.find({
             schoolId,
@@ -292,14 +283,14 @@ const getMyAnnouncements = async (req, res) => {
 
 // ==========================================
 // GET ANNOUNCEMENT BY ID
-// GET /api/notifications/school/:schoolId/announcements/:announcementId
+// GET /api/school/:schoolId/announcements/:announcementId
 // ==========================================
 const getAnnouncementById = async (req, res) => {
     try {
         const { schoolId, announcementId } = req.params;
 
         const schoolDbName = await getSchoolDbName(schoolId);
-        const { Announcement } = getModels(schoolDbName);
+        const { Announcement } = getAnnouncementModels(schoolDbName);
 
         const announcement = await Announcement.findOne({ schoolId, announcementId });
 
@@ -326,7 +317,7 @@ const getAnnouncementById = async (req, res) => {
 
 // ==========================================
 // UPDATE ANNOUNCEMENT
-// PUT /api/notifications/school/:schoolId/announcements/:announcementId
+// PUT /api/school/:schoolId/announcements/:announcementId
 // ==========================================
 const updateAnnouncement = async (req, res) => {
     try {
@@ -335,7 +326,7 @@ const updateAnnouncement = async (req, res) => {
         const updates = req.body;
 
         const schoolDbName = await getSchoolDbName(schoolId);
-        const { Announcement } = getModels(schoolDbName);
+        const { Announcement } = getAnnouncementModels(schoolDbName);
 
         const announcement = await Announcement.findOne({ schoolId, announcementId });
 
@@ -381,7 +372,7 @@ const updateAnnouncement = async (req, res) => {
 
 // ==========================================
 // DELETE (ARCHIVE) ANNOUNCEMENT
-// DELETE /api/notifications/school/:schoolId/announcements/:announcementId
+// DELETE /api/school/:schoolId/announcements/:announcementId
 // ==========================================
 const deleteAnnouncement = async (req, res) => {
     try {
@@ -389,7 +380,7 @@ const deleteAnnouncement = async (req, res) => {
         const { userId, role } = req.user;
 
         const schoolDbName = await getSchoolDbName(schoolId);
-        const { Announcement } = getModels(schoolDbName);
+        const { Announcement } = getAnnouncementModels(schoolDbName);
 
         const announcement = await Announcement.findOne({ schoolId, announcementId });
 

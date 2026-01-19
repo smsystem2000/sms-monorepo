@@ -67,6 +67,8 @@ import ParentTeachers from "../pages/Parent/Teachers";
 import ParentTimetable from "../pages/Parent/Timetable";
 import ParentApplyLeave from "../pages/Parent/Leave/ApplyLeave";
 import ParentLeaveHistory from "../pages/Parent/Leave/History";
+import ParentExamSchedule from "../pages/Parent/Exam/Schedule";
+import ParentExamResults from "../pages/Parent/Exam/Results";
 
 // Shared Pages
 import NotificationsPage from "../pages/Shared/Notifications";
@@ -185,6 +187,8 @@ const MainRouters = () => {
         <Route path="/parent/timetable" element={<ParentTimetable />} />
         <Route path="/parent/leave/apply" element={<ParentApplyLeave />} />
         <Route path="/parent/leave/history" element={<ParentLeaveHistory />} />
+        <Route path="/parent/exam/schedule" element={<ParentExamSchedule />} />
+        <Route path="/parent/exam/results" element={<ParentExamResults />} />
         <Route path="/parent/notifications" element={<NotificationsPage />} />
       </Route>
 

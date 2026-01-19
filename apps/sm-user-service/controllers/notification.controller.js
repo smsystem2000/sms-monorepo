@@ -5,7 +5,8 @@ const { NotificationSchema: notificationSchema } = require("@sms/shared");
 // Helper to get Notification model for a specific school
 const getNotificationModel = (schoolDbName) => {
     const schoolDb = getSchoolDbConnection(schoolDbName);
-    return schoolDb.model('Notification', notificationSchema);
+    // Use mongoose's internal model cache - models are registered once per connection
+    return schoolDb.models.Notification || schoolDb.model('Notification', notificationSchema);
 };
 
 // Generate notification ID
@@ -15,7 +16,7 @@ const generateNotificationId = () => {
 
 // ==========================================
 // GET MY NOTIFICATIONS
-// GET /api/notifications/school/:schoolId/notifications
+// GET /api/school/:schoolId/notifications
 // ==========================================
 const getMyNotifications = async (req, res) => {
     try {
@@ -71,7 +72,7 @@ const getMyNotifications = async (req, res) => {
 
 // ==========================================
 // GET UNREAD COUNT
-// GET /api/notifications/school/:schoolId/notifications/unread-count
+// GET /api/school/:schoolId/notifications/unread-count
 // ==========================================
 const getUnreadCount = async (req, res) => {
     try {
@@ -108,7 +109,7 @@ const getUnreadCount = async (req, res) => {
 
 // ==========================================
 // MARK NOTIFICATION AS READ
-// PUT /api/notifications/school/:schoolId/notifications/:notificationId/read
+// PUT /api/school/:schoolId/notifications/:notificationId/read
 // ==========================================
 const markAsRead = async (req, res) => {
     try {
@@ -154,7 +155,7 @@ const markAsRead = async (req, res) => {
 
 // ==========================================
 // MARK ALL AS READ
-// PUT /api/notifications/school/:schoolId/notifications/mark-all-read
+// PUT /api/school/:schoolId/notifications/mark-all-read
 // ==========================================
 const markAllAsRead = async (req, res) => {
     try {
@@ -191,7 +192,7 @@ const markAllAsRead = async (req, res) => {
 
 // ==========================================
 // DELETE NOTIFICATION
-// DELETE /api/notifications/school/:schoolId/notifications/:notificationId
+// DELETE /api/school/:schoolId/notifications/:notificationId
 // ==========================================
 const deleteNotification = async (req, res) => {
     try {
@@ -235,7 +236,7 @@ const deleteNotification = async (req, res) => {
 
 // ==========================================
 // CREATE NOTIFICATION (Internal Use)
-// Used by other services to create notifications
+// Used by other controllers to create notifications
 // ==========================================
 const createNotification = async (schoolDbName, notificationData) => {
     try {

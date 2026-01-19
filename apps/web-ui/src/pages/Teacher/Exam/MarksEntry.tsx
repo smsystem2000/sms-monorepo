@@ -15,7 +15,8 @@ import {
     TableRow,
     Paper,
     TextField,
-    Chip
+    Chip,
+    Box
 } from '@mui/material';
 import { MuiIcons } from '../../../utils/Icons';
 import { useAuth } from '../../../context/AuthContext';
@@ -25,14 +26,16 @@ import {
     useGetSubjectResults,
     useSubmitMarks
 } from '../../../queries/Exam';
-// Assuming useGetAllStudents exists and takes filters
 import { useGetStudents } from '../../../queries/Student';
+import { useGetTeacherById } from '../../../queries/Teacher';
+import { useGetSubjects } from '../../../queries/Subject';
 
 import type { SubmitMarksRequest } from '../../../types/exam.types';
 
 const MarksEntry = () => {
     const { user } = useAuth();
     const schoolId = user?.schoolId || '';
+    const teacherId = user?.userId || '';
 
     // Selection States
     const [selectedExamId, setSelectedExamId] = useState('');
@@ -41,10 +44,33 @@ const MarksEntry = () => {
     // Data Fetching
     const { data: exams } = useGetExams(schoolId);
     const { data: scheduleData } = useGetExamSchedule(schoolId, selectedExamId);
+    const { data: teacherData } = useGetTeacherById(schoolId, teacherId);
+    const { data: subjectsData } = useGetSubjects(schoolId);
     const { data: resultsData, refetch: refetchResults } = useGetSubjectResults(schoolId, selectedExamId, selectedScheduleId);
 
+    // Get teacher's assigned subjects
+    const teacherSubjects = teacherData?.data?.subjects || [];
+
+    // Filter schedules to only show teacher's assigned subjects
+    const filteredSchedules = scheduleData?.data?.filter((s: any) =>
+        teacherSubjects.includes(s.subjectId)
+    ) || [];
+
+    // Helper to get subject name
+    const getSubjectName = (subjectId: string): string => {
+        const subject = subjectsData?.data?.find((s: any) => s._id === subjectId || s.subjectId === subjectId);
+        return subject?.name || subjectId;
+    };
+
+    // Auto-select if only one subject available
+    useEffect(() => {
+        if (filteredSchedules.length === 1 && !selectedScheduleId) {
+            setSelectedScheduleId(filteredSchedules[0]._id);
+        }
+    }, [filteredSchedules, selectedScheduleId]);
+
     // Derived Data
-    const selectedSchedule = scheduleData?.data?.find((s: any) => s._id === selectedScheduleId);
+    const selectedSchedule = filteredSchedules.find((s: any) => s._id === selectedScheduleId);
 
     // Fetch Students for the selected class/section
     const { data: studentsData } = useGetStudents(schoolId, {
@@ -116,13 +142,13 @@ const MarksEntry = () => {
     };
 
     return (
-        <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">Details Entry (Marks)</h1>
-            </div>
+        <Box sx={{ p: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h4" fontWeight={600}>Details Entry (Marks)</Typography>
+            </Box>
 
-            <Card className="p-6 mb-6">
-                <div className="grid grid-cols-2 gap-4">
+            <Card sx={{ p: 3, mb: 3 }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: teacherSubjects.length <= 1 ? '1fr' : '1fr 1fr', gap: 2 }}>
                     <FormControl fullWidth>
                         <InputLabel>Select Exam</InputLabel>
                         <Select
@@ -137,46 +163,75 @@ const MarksEntry = () => {
                         </Select>
                     </FormControl>
 
-                    <FormControl fullWidth disabled={!selectedExamId}>
-                        <InputLabel>Select Subject/Class</InputLabel>
-                        <Select
-                            value={selectedScheduleId}
-                            label="Select Subject/Class"
-                            onChange={(e) => setSelectedScheduleId(e.target.value)}
-                        >
-                            {scheduleData?.data?.map((s: any) => (
-                                <MenuItem key={s._id} value={s._id}>
-                                    {s.subjectId} - Class {s.classId} ({new Date(s.date).toLocaleDateString()})
-                                </MenuItem>
-                            ))}
-                            {scheduleData?.data?.length === 0 && <MenuItem disabled>No schedule found</MenuItem>}
-                        </Select>
-                    </FormControl>
-                </div>
+                    {/* Show dropdown if teacher has multiple subjects */}
+                    {teacherSubjects.length > 1 && (
+                        <FormControl fullWidth disabled={!selectedExamId || filteredSchedules.length === 0}>
+                            <InputLabel>Select Subject/Class</InputLabel>
+                            <Select
+                                value={selectedScheduleId}
+                                label="Select Subject/Class"
+                                onChange={(e) => setSelectedScheduleId(e.target.value)}
+                            >
+                                {filteredSchedules.map((s: any) => (
+                                    <MenuItem key={s._id} value={s._id}>
+                                        {getSubjectName(s.subjectId)} - Class {s.classId} ({new Date(s.date).toLocaleDateString()})
+                                    </MenuItem>
+                                ))}
+                                {filteredSchedules.length === 0 && <MenuItem disabled>No schedules for your subjects</MenuItem>}
+                            </Select>
+                        </FormControl>
+                    )}
+
+                    {/* Show selected subject info if only one subject */}
+                    {teacherSubjects.length === 1 && filteredSchedules.length === 1 && selectedSchedule && (
+                        <Paper sx={{ p: 2, bgcolor: 'primary.light', color: 'primary.contrastText' }}>
+                            <Typography variant="body1">
+                                <strong>Subject:</strong> {getSubjectName(selectedSchedule.subjectId)} - Class {selectedSchedule.classId}
+                            </Typography>
+                        </Paper>
+                    )}
+                </Box>
+
+                {/* Show message when exam is selected but no schedules found */}
+                {selectedExamId && filteredSchedules.length === 0 && (
+                    <Paper sx={{ p: 3, mt: 2, bgcolor: 'warning.light', textAlign: 'center' }}>
+                        <Typography variant="body1" color="warning.dark" fontWeight={600}>
+                            No exam schedules found for your assigned subjects
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                            This exam may not have been scheduled yet, or you may not be assigned to teach any subjects for this exam.
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                            Your assigned subjects: {teacherSubjects.length > 0 ? teacherSubjects.map(getSubjectName).join(', ') : 'None'}
+                        </Typography>
+                    </Paper>
+                )}
             </Card>
 
             {selectedScheduleId && (
-                <Card className="p-4">
-                    <div className="flex justify-between items-center mb-4">
-                        <Typography variant="h6">
-                            Enter Marks
+                <Card sx={{ p: 3 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <Box>
+                            <Typography variant="h6">
+                                Enter Marks
+                            </Typography>
                             <Chip
                                 size="small"
-                                label={`Max: ${selectedSchedule?.maxMarksTheory} TH + ${selectedSchedule?.maxMarksPractical} PR`}
-                                className="ml-2"
+                                label={`Max: ${selectedSchedule?.maxMarksTheory} Theory + ${selectedSchedule?.maxMarksPractical} Practical`}
+                                sx={{ mt: 1 }}
+                                color="primary"
+                                variant="outlined"
                             />
-                        </Typography>
+                        </Box>
                         <Button
                             variant="contained"
-                            startIcon={<MuiIcons.Save />} // Assuming Save exists? Wait, I saw ContentSave/Save in similar projects, but let's check index.tsx. Using CheckCircle or AddCircle if Save not there.
-                            // Actually, I'll use CheckCircle for now as a fallback or check Icons.tsx
-                            // I will check Icons later.
+                            startIcon={<MuiIcons.Save />}
                             onClick={handleSubmit}
                             disabled={!hasChanges || submitMarks.isPending}
                         >
                             {submitMarks.isPending ? 'Saving...' : 'Save Marks'}
                         </Button>
-                    </div>
+                    </Box>
 
                     <TableContainer component={Paper} elevation={0} variant="outlined">
                         <Table size="small">
@@ -246,7 +301,7 @@ const MarksEntry = () => {
                     </TableContainer>
                 </Card>
             )}
-        </div>
+        </Box>
     );
 };
 

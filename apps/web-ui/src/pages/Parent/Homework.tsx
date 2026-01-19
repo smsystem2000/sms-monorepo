@@ -42,7 +42,28 @@ const ParentHomework: React.FC = () => {
         });
     };
 
-    if (!selectedChild && !loadingChild) {
+    // Show loading skeleton while children are being loaded
+    if (loadingChild) {
+        return (
+            <Box sx={{ p: 3 }}>
+                <Grid container spacing={2}>
+                    {[1, 2, 3].map((i) => (
+                        <Grid size={{ xs: 12, md: 6 }} key={i}>
+                            <Card>
+                                <CardContent>
+                                    <Skeleton variant="text" width="70%" height={30} />
+                                    <Skeleton variant="text" width="40%" />
+                                    <Skeleton variant="text" width="100%" />
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    ))}
+                </Grid>
+            </Box>
+        );
+    }
+
+    if (!selectedChild) {
         return (
             <Box sx={{ p: 3 }}>
                 <Alert severity="info">Please select a child to view their homework.</Alert>

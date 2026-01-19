@@ -61,7 +61,7 @@ import CardMembership from "@mui/icons-material/CardMembership";
 import Delete from "@mui/icons-material/Delete";
 import Save from "@mui/icons-material/Save";
 import Edit from "@mui/icons-material/Edit";
-import { CalendarMonth, Create } from "@mui/icons-material";
+import { CalendarMonth, Create, Notifications } from "@mui/icons-material";
 
 export const MuiIcons = {
   Dashboard,
@@ -130,4 +130,5 @@ export const MuiIcons = {
   Save,
   Edit,
   Warning,
+  Notifications,
 };

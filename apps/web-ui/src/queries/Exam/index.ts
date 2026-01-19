@@ -163,6 +163,28 @@ export const useGetExams = (schoolId: string, academicYear?: string) => {
     });
 };
 
+export const useUpdateExam = (schoolId: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ examId, data }: { examId: string; data: Partial<CreateExamRequest> }) =>
+            useApi("PUT", `/api/academics/school/${schoolId}/exams/${examId}`, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [EXAM_KEYS.EXAMS, schoolId] });
+        }
+    });
+};
+
+export const useDeleteExam = (schoolId: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (examId: string) =>
+            useApi("DELETE", `/api/academics/school/${schoolId}/exams/${examId}`),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [EXAM_KEYS.EXAMS, schoolId] });
+        }
+    });
+};
+
 export const useScheduleExam = (schoolId: string) => {
     const queryClient = useQueryClient();
     return useMutation({

@@ -29,12 +29,17 @@ import type { TimetableEntry } from '../../../types/timetable.types';
 
 type ViewMode = 'table' | 'list';
 
-const MyTimetable = () => {
+interface MyTimetableProps {
+    studentClassId?: string;
+    studentSectionId?: string;
+}
+
+const MyTimetable = ({ studentClassId, studentSectionId }: MyTimetableProps = {}) => {
     const schoolId = TokenService.getSchoolId() || '';
-    // Get class and section from student token
+    // Get class and section from props (for parents) or student token (for students)
     const user = TokenService.getUser();
-    const classId = user?.class || '';
-    const sectionId = user?.section || '';
+    const classId = studentClassId || user?.class || '';
+    const sectionId = studentSectionId || user?.section || '';
 
     const [viewMode, setViewMode] = useState<ViewMode>('table');
 

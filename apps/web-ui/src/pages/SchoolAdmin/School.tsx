@@ -3,7 +3,6 @@ import {
     Typography,
     Paper,
     Grid,
-    Button,
     CircularProgress,
     Alert,
     Chip,
@@ -13,7 +12,6 @@ import {
     Divider
 } from '@mui/material';
 import {
-    Edit as EditIcon,
     School as SchoolIcon,
     Email as EmailIcon,
     Phone as PhoneIcon,
@@ -121,18 +119,6 @@ const SchoolPage = () => {
                             </Typography>
                         </Box>
                     </Box>
-                    <Button
-                        variant="contained"
-                        startIcon={<EditIcon />}
-                        sx={{
-                            bgcolor: 'white',
-                            color: '#4f46e5',
-                            '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' }
-                        }}
-                        disabled
-                    >
-                        Edit School Info
-                    </Button>
                 </Box>
             </Paper>
 

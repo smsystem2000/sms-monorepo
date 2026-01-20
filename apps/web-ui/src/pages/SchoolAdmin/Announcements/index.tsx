@@ -219,7 +219,7 @@ const SchoolAdminAnnouncements: React.FC = () => {
             <Grid container spacing={2}>
                 {isLoading ? (
                     [1, 2, 3].map((i) => (
-                        <Grid item xs={12} md={6} lg={4} key={i}>
+                        <Grid xs={12} md={6} lg={4} key={i}>
                             <Card>
                                 <CardContent>
                                     <Skeleton variant="text" width="70%" height={30} />
@@ -230,7 +230,7 @@ const SchoolAdminAnnouncements: React.FC = () => {
                         </Grid>
                     ))
                 ) : announcements.length === 0 ? (
-                    <Grid item xs={12}>
+                    <Grid xs={12}>
                         <Card>
                             <CardContent sx={{ textAlign: 'center', py: 6 }}>
                                 <AnnouncementIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
@@ -250,7 +250,7 @@ const SchoolAdminAnnouncements: React.FC = () => {
                     </Grid>
                 ) : (
                     announcements.map((ann: Announcement) => (
-                        <Grid item xs={12} md={6} lg={4} key={ann.announcementId}>
+                        <Grid xs={12} md={6} lg={4} key={ann.announcementId}>
                             <Card
                                 sx={{
                                     height: '100%',

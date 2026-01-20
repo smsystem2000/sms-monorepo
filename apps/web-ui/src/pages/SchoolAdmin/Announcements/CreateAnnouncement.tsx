@@ -25,7 +25,9 @@ import { useNavigate } from 'react-router-dom';
 import { useCreateAnnouncement } from '../../../queries/Announcement';
 import { useGetClasses } from '../../../queries/Class';
 import TokenService from '../../../queries/token/tokenService';
-import type { CreateAnnouncementPayload, AnnouncementCategory, AnnouncementPriority, AnnouncementTargetAudience } from '../../../types';
+import FileUpload from '../../../components/FileUpload/FileUpload';
+import { IMAGEKIT_FOLDERS } from '../../../utils/imagekit';
+import type { CreateAnnouncementPayload, AnnouncementCategory, AnnouncementPriority, AnnouncementTargetAudience, AnnouncementAttachment } from '../../../types';
 
 const categories: { value: AnnouncementCategory; label: string }[] = [
     { value: 'general', label: 'General' },
@@ -120,7 +122,7 @@ const CreateAnnouncement: React.FC = () => {
         priority: 'normal',
         targetAudience: 'all',
         targetClasses: [],
-        attachmentUrl: '',
+        attachments: [],
     });
     const [publishNow, setPublishNow] = useState(true);
     const [publishDate, setPublishDate] = useState<Date | null>(null);
@@ -305,13 +307,16 @@ const CreateAnnouncement: React.FC = () => {
                                 </Grid>
 
                                 <Grid size={{ xs: 12 }}>
-                                    <TextField
-                                        fullWidth
-                                        label="Attachment URL (Optional)"
-                                        value={formData.attachmentUrl}
-                                        onChange={handleChange('attachmentUrl')}
-                                        placeholder="https://..."
-                                        helperText="Link to any attachment or circular document"
+                                    <FileUpload
+                                        folder={IMAGEKIT_FOLDERS.ANNOUNCEMENTS}
+                                        baseFileName={`announcement_${schoolId}`}
+                                        currentAttachments={formData.attachments}
+                                        onUploadSuccess={(attachments: AnnouncementAttachment[]) => {
+                                            setFormData(prev => ({ ...prev, attachments }));
+                                        }}
+                                        label="Attachments (Optional)"
+                                        authEndpoint="school"
+                                        maxFiles={5}
                                     />
                                 </Grid>
 

@@ -32,7 +32,7 @@ const generateAnnouncementId = async (AnnouncementModel) => {
 const createAnnouncement = async (req, res) => {
     try {
         const { schoolId } = req.params;
-        const { title, content, category, priority, targetAudience, targetClasses, attachmentUrl, publishDate, expiryDate } = req.body;
+        const { title, content, category, priority, targetAudience, targetClasses, attachmentUrl, attachments, publishDate, expiryDate } = req.body;
         const { userId, role, userName } = req.user;
 
         // Validate required fields
@@ -65,14 +65,17 @@ const createAnnouncement = async (req, res) => {
             priority: priority || 'normal',
             targetAudience: targetAudience || 'all',
             targetClasses: targetClasses || [],
-            attachmentUrl,
+            attachments: attachments || [],
+            attachmentUrl,  // Keep for backwards compatibility
             publishDate: publishDate ? new Date(publishDate) : new Date(),
             expiryDate: expiryDate ? new Date(expiryDate) : null,
             isPublished: true,
             createdBy: userId,
             createdByRole: role,
             createdByName: userName || 'Admin',
-            status: 'active'
+            status: 'active',
+            seenBy: [],
+            seenCount: 0
         });
 
         await newAnnouncement.save();
@@ -226,12 +229,22 @@ const getAllAnnouncements = async (req, res) => {
             .skip((page - 1) * limit)
             .limit(parseInt(limit));
 
+        // Add isSeen flag for each announcement based on current user
+        const announcementsWithSeenStatus = announcements.map(announcement => {
+            const announcementObj = announcement.toObject();
+            const seenByUser = announcement.seenBy?.some(s => s.userId === userId);
+            return {
+                ...announcementObj,
+                isSeen: seenByUser || false
+            };
+        });
+
         const total = await Announcement.countDocuments(query);
 
         res.status(200).json({
             success: true,
             message: "Announcements fetched successfully",
-            data: announcements,
+            data: announcementsWithSeenStatus,
             pagination: {
                 page: parseInt(page),
                 limit: parseInt(limit),
@@ -416,6 +429,105 @@ const deleteAnnouncement = async (req, res) => {
     }
 };
 
+// ==========================================
+// MARK ANNOUNCEMENT AS SEEN
+// POST /api/school/:schoolId/announcements/:announcementId/seen
+// ==========================================
+const markAnnouncementAsSeen = async (req, res) => {
+    try {
+        const { schoolId, announcementId } = req.params;
+        const { userId, role } = req.user;
+
+        const schoolDbName = await getSchoolDbName(schoolId);
+        const { Announcement } = getAnnouncementModels(schoolDbName);
+
+        const announcement = await Announcement.findOne({ schoolId, announcementId });
+
+        if (!announcement) {
+            return res.status(404).json({
+                success: false,
+                message: "Announcement not found"
+            });
+        }
+
+        // Check if user has already seen this announcement
+        const alreadySeen = announcement.seenBy.some(s => s.userId === userId);
+
+        if (!alreadySeen) {
+            announcement.seenBy.push({
+                userId,
+                userRole: role,
+                seenAt: new Date()
+            });
+            announcement.seenCount = announcement.seenBy.length;
+            await announcement.save();
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Announcement marked as seen"
+        });
+    } catch (error) {
+        console.error("Mark Announcement Seen Error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to mark announcement as seen",
+            error: error.message
+        });
+    }
+};
+
+// ==========================================
+// GET ANNOUNCEMENT SEEN STATUS
+// GET /api/school/:schoolId/announcements/:announcementId/seen-status
+// ==========================================
+const getAnnouncementSeenStatus = async (req, res) => {
+    try {
+        const { schoolId, announcementId } = req.params;
+        const { role } = req.user;
+
+        // Only admin and teachers (who created it) can view seen status
+        if (role !== 'sch_admin' && role !== 'teacher') {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied"
+            });
+        }
+
+        const schoolDbName = await getSchoolDbName(schoolId);
+        const { Announcement } = getAnnouncementModels(schoolDbName);
+
+        const announcement = await Announcement.findOne(
+            { schoolId, announcementId },
+            'seenBy seenCount targetAudience targetClasses'
+        );
+
+        if (!announcement) {
+            return res.status(404).json({
+                success: false,
+                message: "Announcement not found"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: {
+                seenBy: announcement.seenBy,
+                seenCount: announcement.seenCount,
+                targetAudience: announcement.targetAudience,
+                targetClasses: announcement.targetClasses
+            }
+        });
+    } catch (error) {
+        console.error("Get Announcement Seen Status Error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch announcement seen status",
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     createAnnouncement,
     getAllAnnouncements,
@@ -423,4 +535,6 @@ module.exports = {
     getAnnouncementById,
     updateAnnouncement,
     deleteAnnouncement,
+    markAnnouncementAsSeen,
+    getAnnouncementSeenStatus,
 };

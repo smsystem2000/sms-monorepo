@@ -115,3 +115,37 @@ export const useDeleteAnnouncement = (schoolId: string) => {
         },
     });
 };
+
+// Mark announcement as seen
+export const useMarkAnnouncementSeen = (schoolId: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (announcementId: string) => useApi(
+            "POST",
+            `/api/school/${schoolId}/announcements/${announcementId}/seen`
+        ),
+        onSuccess: (_, announcementId) => {
+            // Update the specific announcement in the list
+            queryClient.invalidateQueries({ queryKey: announcementKeys.lists() });
+            queryClient.invalidateQueries({ queryKey: announcementKeys.detail(schoolId, announcementId) });
+        },
+    });
+};
+
+// Get announcement seen status (for admin/teacher)
+export const useGetAnnouncementSeenStatus = (schoolId: string, announcementId: string) => {
+    return useQuery({
+        queryKey: [...announcementKeys.detail(schoolId, announcementId), 'seenStatus'],
+        queryFn: () => useApi<ApiResponse<{
+            seenBy: { userId: string; userRole: string; seenAt: string }[];
+            seenCount: number;
+            targetAudience: string;
+            targetClasses?: string[];
+        }>>(
+            "GET",
+            `/api/school/${schoolId}/announcements/${announcementId}/seen-status`
+        ),
+        enabled: !!schoolId && !!announcementId,
+    });
+};

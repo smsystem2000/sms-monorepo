@@ -21,9 +21,9 @@ import {
     Event as EventIcon,
     School as SchoolIcon,
 } from '@mui/icons-material';
-import { useGetAnnouncements } from '../../queries/Announcement';
+import { useGetAnnouncements, useMarkAnnouncementSeen } from '../../queries/Announcement';
 import TokenService from '../../queries/token/tokenService';
-import type { Announcement, AnnouncementCategory } from '../../types';
+import type { Announcement, AnnouncementCategory, AnnouncementAttachment } from '../../types';
 
 const categoryColors: Record<AnnouncementCategory, 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning'> = {
     general: 'default',
@@ -54,8 +54,16 @@ const getCategoryIcon = (category: AnnouncementCategory) => {
 const Announcements: React.FC = () => {
     const schoolId = TokenService.getSchoolId() || '';
     const { data, isLoading, error } = useGetAnnouncements(schoolId);
+    const markAsSeen = useMarkAnnouncementSeen(schoolId);
 
     const announcements = data?.data || [];
+
+    const handleExpand = (announcementId: string, isSeen: boolean) => {
+        // Mark as seen when expanding if not already seen
+        if (!isSeen) {
+            markAsSeen.mutate(announcementId);
+        }
+    };
 
     if (error) {
         return (
@@ -112,11 +120,33 @@ const Announcements: React.FC = () => {
                 </Card>
             ) : (
                 announcements.map((announcement: Announcement) => (
-                    <Accordion key={announcement.announcementId} sx={{ mb: 1 }}>
+                    <Accordion
+                        key={announcement.announcementId}
+                        sx={{ mb: 1 }}
+                        onChange={(_, expanded) => {
+                            if (expanded) {
+                                handleExpand(announcement.announcementId, announcement.isSeen || false);
+                            }
+                        }}
+                    >
                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                             <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                                    <Typography variant="subtitle1" fontWeight={600}>
+                                    {!announcement.isSeen && (
+                                        <Box
+                                            sx={{
+                                                width: 8,
+                                                height: 8,
+                                                borderRadius: '50%',
+                                                bgcolor: 'primary.main',
+                                                flexShrink: 0
+                                            }}
+                                        />
+                                    )}
+                                    <Typography
+                                        variant="subtitle1"
+                                        fontWeight={announcement.isSeen ? 500 : 700}
+                                    >
                                         {announcement.title}
                                     </Typography>
                                     {announcement.priority === 'urgent' && (
@@ -165,7 +195,31 @@ const Announcements: React.FC = () => {
                                 {announcement.content}
                             </Typography>
 
-                            {announcement.attachmentUrl && (
+                            {/* Display multiple attachments */}
+                            {(announcement.attachments && announcement.attachments.length > 0) && (
+                                <Box sx={{ mt: 2 }}>
+                                    <Divider sx={{ mb: 2 }} />
+                                    <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>Attachments</Typography>
+                                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                        {announcement.attachments.map((attachment: AnnouncementAttachment, index: number) => (
+                                            <Button
+                                                key={index}
+                                                variant="outlined"
+                                                size="small"
+                                                startIcon={<AttachFileIcon />}
+                                                href={attachment.url}
+                                                target="_blank"
+                                                sx={{ textTransform: 'none' }}
+                                            >
+                                                {attachment.fileName || `Attachment ${index + 1}`}
+                                            </Button>
+                                        ))}
+                                    </Box>
+                                </Box>
+                            )}
+
+                            {/* Backwards compatibility: single attachmentUrl */}
+                            {announcement.attachmentUrl && (!announcement.attachments || announcement.attachments.length === 0) && (
                                 <Box sx={{ mt: 2 }}>
                                     <Divider sx={{ mb: 2 }} />
                                     <Button

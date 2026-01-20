@@ -25,7 +25,6 @@ import SchoolAdminLeaveRequests from "../pages/SchoolAdmin/Leave/Requests";
 import SchoolLocation from "../pages/SchoolAdmin/SchoolLocation";
 import { TimetableConfig, TimetableMaster, ConflictManagement, SubstituteManagement } from "../pages/SchoolAdmin/Timetable";
 import SchoolAdminAnnouncements from "../pages/SchoolAdmin/Announcements";
-import CreateAnnouncementAdmin from "../pages/SchoolAdmin/Announcements/CreateAnnouncement";
 
 // Teacher Pages
 import TeacherDashboard from "../pages/Teacher/Dashboard";
@@ -37,6 +36,7 @@ import TeacherProfile from "../pages/Teacher/Profile";
 import TeacherMyRequests from "../pages/Teacher/MyRequests";
 import TeacherHomework from "../pages/Teacher/Homework";
 import CreateHomework from "../pages/Teacher/Homework/CreateHomework";
+import TeacherAnnouncements from "../pages/Teacher/Announcements";
 
 // Student Pages
 import StudentDashboard from "../pages/Student/Dashboard";
@@ -49,6 +49,7 @@ import StudentMyRequests from "../pages/Student/MyRequests";
 import StudentApplyLeave from "../pages/Student/Leave/ApplyLeave";
 import StudentMyLeaves from "../pages/Student/Leave/MyLeaves";
 import StudentHomework from "../pages/Student/Homework";
+import StudentAnnouncements from "../pages/Student/Announcements";
 
 // Teacher Leave Pages
 import TeacherApplyLeave from "../pages/Teacher/Leave/ApplyLeave";
@@ -121,7 +122,6 @@ const MainRouters = () => {
 
         {/* Announcements Routes (Admin) */}
         <Route path="/school-admin/announcements" element={<SchoolAdminAnnouncements />} />
-        <Route path="/school-admin/announcements/create" element={<CreateAnnouncementAdmin />} />
 
         {/* Notifications */}
         <Route path="/school-admin/notifications" element={<NotificationsPage />} />
@@ -149,8 +149,7 @@ const MainRouters = () => {
         <Route path="/teacher/homework/create" element={<CreateHomework />} />
 
         {/* Announcements Routes (Teacher) */}
-        <Route path="/teacher/announcements" element={<SchoolAdminAnnouncements />} />
-        <Route path="/teacher/announcements/create" element={<CreateAnnouncementAdmin />} />
+        <Route path="/teacher/announcements" element={<TeacherAnnouncements />} />
 
         {/* Notifications */}
         <Route path="/teacher/notifications" element={<NotificationsPage />} />
@@ -171,6 +170,7 @@ const MainRouters = () => {
         <Route path="/student/timetable" element={<StudentTimetable />} />
         <Route path="/student/exam/my-exams" element={<MyExams />} />
         <Route path="/student/homework" element={<StudentHomework />} />
+        <Route path="/student/announcements" element={<StudentAnnouncements />} />
         <Route path="/student/notifications" element={<NotificationsPage />} />
         <Route path="/student/profile" element={<StudentProfile />} />
       </Route>

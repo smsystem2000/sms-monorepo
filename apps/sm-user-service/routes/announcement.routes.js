@@ -8,6 +8,8 @@ const {
     getAnnouncementById,
     updateAnnouncement,
     deleteAnnouncement,
+    markAnnouncementAsSeen,
+    getAnnouncementSeenStatus,
 } = require('../controllers/announcement.controller');
 
 // Create announcement (Admin and Teacher)
@@ -54,6 +56,21 @@ router.delete(
     Authenticated,
     authorizeRoles('sch_admin', 'teacher'),
     deleteAnnouncement
+);
+
+// Mark announcement as seen
+router.post(
+    '/:announcementId/seen',
+    Authenticated,
+    markAnnouncementAsSeen
+);
+
+// Get announcement seen status (Admin/Teacher only)
+router.get(
+    '/:announcementId/seen-status',
+    Authenticated,
+    authorizeRoles('sch_admin', 'teacher'),
+    getAnnouncementSeenStatus
 );
 
 module.exports = router;

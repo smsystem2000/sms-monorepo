@@ -41,8 +41,6 @@ const categoryColors: Record<AnnouncementCategory, 'default' | 'primary' | 'seco
     emergency: 'error',
 };
 
-// priorityColors removed - using inline logic instead
-
 const getCategoryIcon = (category: AnnouncementCategory) => {
     switch (category) {
         case 'exam':

@@ -753,6 +753,13 @@ export type AnnouncementPriority = 'low' | 'normal' | 'high' | 'urgent';
 export type AnnouncementTargetAudience = 'all' | 'students' | 'teachers' | 'parents' | 'specific_class';
 export type AnnouncementStatus = 'active' | 'archived';
 
+export interface AnnouncementAttachment {
+  url: string;
+  fileName: string;
+  fileType: 'image' | 'pdf' | 'document';
+  uploadedAt?: string;
+}
+
 export interface Announcement {
   announcementId: string;
   schoolId: string;
@@ -762,7 +769,8 @@ export interface Announcement {
   priority: AnnouncementPriority;
   targetAudience: AnnouncementTargetAudience;
   targetClasses?: string[];
-  attachmentUrl?: string;
+  attachments?: AnnouncementAttachment[];
+  attachmentUrl?: string;  // Backwards compatibility
   publishDate: string;
   expiryDate?: string;
   isPublished: boolean;
@@ -770,6 +778,9 @@ export interface Announcement {
   createdByRole: 'sch_admin' | 'teacher';
   createdByName?: string;
   status: AnnouncementStatus;
+  seenBy?: { userId: string; userRole: string; seenAt: string }[];
+  seenCount?: number;
+  isSeen?: boolean;  // Populated by API based on current user
   createdAt?: string;
   updatedAt?: string;
 }
@@ -781,7 +792,8 @@ export interface CreateAnnouncementPayload {
   priority?: AnnouncementPriority;
   targetAudience?: AnnouncementTargetAudience;
   targetClasses?: string[];
-  attachmentUrl?: string;
+  attachments?: AnnouncementAttachment[];
+  attachmentUrl?: string;  // Backwards compatibility
   publishDate?: string;
   expiryDate?: string;
 }
@@ -793,6 +805,7 @@ export interface UpdateAnnouncementPayload {
   priority?: AnnouncementPriority;
   targetAudience?: AnnouncementTargetAudience;
   targetClasses?: string[];
+  attachments?: AnnouncementAttachment[];
   attachmentUrl?: string;
   expiryDate?: string;
   isPublished?: boolean;

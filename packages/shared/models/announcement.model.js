@@ -38,8 +38,45 @@ const AnnouncementSchema = new Schema({
     targetClasses: [{
         type: String
     }],
+    attachments: [{
+        url: {
+            type: String,
+            required: true
+        },
+        fileName: {
+            type: String,
+            required: true
+        },
+        fileType: {
+            type: String,
+            enum: ['image', 'pdf', 'document'],
+            required: true
+        },
+        uploadedAt: {
+            type: Date,
+            default: Date.now
+        }
+    }],
     attachmentUrl: {
         type: String
+    },
+    seenBy: [{
+        userId: {
+            type: String,
+            required: true
+        },
+        userRole: {
+            type: String,
+            required: true
+        },
+        seenAt: {
+            type: Date,
+            default: Date.now
+        }
+    }],
+    seenCount: {
+        type: Number,
+        default: 0
     },
     publishDate: {
         type: Date,

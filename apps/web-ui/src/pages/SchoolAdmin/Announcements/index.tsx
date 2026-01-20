@@ -4,7 +4,6 @@ import {
     Typography,
     Card,
     CardContent,
-    Grid,
     Chip,
     Alert,
     Skeleton,
@@ -216,21 +215,19 @@ const SchoolAdminAnnouncements: React.FC = () => {
                 <Tab label="All" />
             </Tabs>
 
-            <Grid container spacing={2}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: '1fr 1fr 1fr' }, gap: 2 }}>
                 {isLoading ? (
                     [1, 2, 3].map((i) => (
-                        <Grid xs={12} md={6} lg={4} key={i}>
-                            <Card>
-                                <CardContent>
-                                    <Skeleton variant="text" width="70%" height={30} />
-                                    <Skeleton variant="text" width="40%" />
-                                    <Skeleton variant="text" width="100%" />
-                                </CardContent>
-                            </Card>
-                        </Grid>
+                        <Card key={i}>
+                            <CardContent>
+                                <Skeleton variant="text" width="70%" height={30} />
+                                <Skeleton variant="text" width="40%" />
+                                <Skeleton variant="text" width="100%" />
+                            </CardContent>
+                        </Card>
                     ))
                 ) : announcements.length === 0 ? (
-                    <Grid xs={12}>
+                    <Box sx={{ gridColumn: '1 / -1' }}>
                         <Card>
                             <CardContent sx={{ textAlign: 'center', py: 6 }}>
                                 <AnnouncementIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
@@ -247,93 +244,92 @@ const SchoolAdminAnnouncements: React.FC = () => {
                                 </Button>
                             </CardContent>
                         </Card>
-                    </Grid>
+                    </Box>
                 ) : (
                     announcements.map((ann: Announcement) => (
-                        <Grid xs={12} md={6} lg={4} key={ann.announcementId}>
-                            <Card
-                                sx={{
-                                    height: '100%',
-                                    borderTop: 4,
-                                    borderColor: ann.priority === 'urgent' ? 'error.main' :
-                                        ann.priority === 'high' ? 'warning.main' : 'primary.main',
-                                }}
-                            >
-                                <CardContent>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 1 }}>
-                                        <Typography variant="h6" fontWeight={600} noWrap>
-                                            {ann.title}
-                                        </Typography>
-                                        {ann.priority === 'urgent' && (
-                                            <Chip size="small" label="Urgent" color="error" icon={<WarningIcon />} />
-                                        )}
-                                    </Box>
-
-                                    <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
-                                        <Chip
-                                            size="small"
-                                            label={ann.category}
-                                            color={categoryColors[ann.category]}
-                                            variant="outlined"
-                                        />
-                                        <Chip
-                                            size="small"
-                                            label={ann.targetAudience === 'specific_class' ? 'Specific Classes' : ann.targetAudience}
-                                            variant="outlined"
-                                        />
-                                        <Chip
-                                            size="small"
-                                            label={ann.status}
-                                            color={ann.status === 'active' ? 'success' : 'default'}
-                                        />
-                                    </Box>
-
-                                    <Typography
-                                        variant="body2"
-                                        color="text.secondary"
-                                        sx={{
-                                            mb: 2,
-                                            display: '-webkit-box',
-                                            WebkitLineClamp: 2,
-                                            WebkitBoxOrient: 'vertical',
-                                            overflow: 'hidden',
-                                        }}
-                                    >
-                                        {ann.content}
+                        <Card
+                            key={ann.announcementId}
+                            sx={{
+                                height: '100%',
+                                borderTop: 4,
+                                borderColor: ann.priority === 'urgent' ? 'error.main' :
+                                    ann.priority === 'high' ? 'warning.main' : 'primary.main',
+                            }}
+                        >
+                            <CardContent>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 1 }}>
+                                    <Typography variant="h6" fontWeight={600} noWrap>
+                                        {ann.title}
                                     </Typography>
-
-                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-                                        Published: {formatDate(ann.publishDate)} • By {ann.createdByName || 'Admin'}
-                                    </Typography>
-
-                                    {(role === 'sch_admin' || ann.createdBy === TokenService.getUserId()) && (
-                                        <Box sx={{ display: 'flex', gap: 1 }}>
-                                            <Button
-                                                size="small"
-                                                startIcon={<EditIcon />}
-                                                onClick={() => handleOpenEditDialog(ann)}
-                                            >
-                                                Edit
-                                            </Button>
-                                            <Button
-                                                size="small"
-                                                color="error"
-                                                startIcon={<DeleteIcon />}
-                                                onClick={() => {
-                                                    setSelectedAnnouncement(ann);
-                                                    setDeleteDialogOpen(true);
-                                                }}
-                                            >
-                                                Archive
-                                            </Button>
-                                        </Box>
+                                    {ann.priority === 'urgent' && (
+                                        <Chip size="small" label="Urgent" color="error" icon={<WarningIcon />} />
                                     )}
-                                </CardContent>
-                            </Card>
-                        </Grid>
+                                </Box>
+
+                                <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+                                    <Chip
+                                        size="small"
+                                        label={ann.category}
+                                        color={categoryColors[ann.category]}
+                                        variant="outlined"
+                                    />
+                                    <Chip
+                                        size="small"
+                                        label={ann.targetAudience === 'specific_class' ? 'Specific Classes' : ann.targetAudience}
+                                        variant="outlined"
+                                    />
+                                    <Chip
+                                        size="small"
+                                        label={ann.status}
+                                        color={ann.status === 'active' ? 'success' : 'default'}
+                                    />
+                                </Box>
+
+                                <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                    sx={{
+                                        mb: 2,
+                                        display: '-webkit-box',
+                                        WebkitLineClamp: 2,
+                                        WebkitBoxOrient: 'vertical',
+                                        overflow: 'hidden',
+                                    }}
+                                >
+                                    {ann.content}
+                                </Typography>
+
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+                                    Published: {formatDate(ann.publishDate)} • By {ann.createdByName || 'Admin'}
+                                </Typography>
+
+                                {(role === 'sch_admin' || ann.createdBy === TokenService.getUserId()) && (
+                                    <Box sx={{ display: 'flex', gap: 1 }}>
+                                        <Button
+                                            size="small"
+                                            startIcon={<EditIcon />}
+                                            onClick={() => handleOpenEditDialog(ann)}
+                                        >
+                                            Edit
+                                        </Button>
+                                        <Button
+                                            size="small"
+                                            color="error"
+                                            startIcon={<DeleteIcon />}
+                                            onClick={() => {
+                                                setSelectedAnnouncement(ann);
+                                                setDeleteDialogOpen(true);
+                                            }}
+                                        >
+                                            Archive
+                                        </Button>
+                                    </Box>
+                                )}
+                            </CardContent>
+                        </Card>
                     ))
                 )}
-            </Grid>
+            </Box>
 
             {/* Archive Confirmation Dialog */}
             <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>

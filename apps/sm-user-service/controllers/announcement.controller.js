@@ -54,6 +54,19 @@ const createAnnouncement = async (req, res) => {
         const schoolDbName = await getSchoolDbName(schoolId);
         const { Announcement, Notification, Student, Parent, Teacher } = getAnnouncementModels(schoolDbName);
 
+        // Get creator's name from database
+        let creatorName = userName || 'Admin';
+        if (role === 'teacher') {
+            const teacher = await Teacher.findOne({ teacherId: userId }, 'firstName lastName');
+            if (teacher) {
+                creatorName = `${teacher.firstName} ${teacher.lastName}`;
+            }
+        } else if (role === 'sch_admin') {
+            // For school admin, you can fetch from SchoolAdmin model if needed
+            // For now, we'll use userName or default
+            creatorName = userName || 'Admin';
+        }
+
         const announcementId = await generateAnnouncementId(Announcement);
 
         const newAnnouncement = new Announcement({
@@ -72,7 +85,7 @@ const createAnnouncement = async (req, res) => {
             isPublished: true,
             createdBy: userId,
             createdByRole: role,
-            createdByName: userName || 'Admin',
+            createdByName: creatorName,
             status: 'active',
             seenBy: [],
             seenCount: 0

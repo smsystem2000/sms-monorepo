@@ -73,6 +73,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
     const [isUploading, setIsUploading] = useState(false);
     const [attachments, setAttachments] = useState<AnnouncementAttachment[]>(currentAttachments);
     const [error, setError] = useState<string | null>(null);
+    const [currentUploadFileType, setCurrentUploadFileType] = useState<'image' | 'pdf' | 'document'>('document');
     const uploadRef = useRef<HTMLInputElement>(null);
 
     // Handle successful upload
@@ -83,7 +84,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
         const newAttachment: AnnouncementAttachment = {
             url: response.url,
             fileName: response.name,
-            fileType: getFileType(response.name),
+            fileType: currentUploadFileType, // Use the tracked file type instead of parsing name
             uploadedAt: new Date().toISOString(),
         };
 
@@ -235,6 +236,14 @@ const FileUpload: React.FC<FileUploadProps> = ({
                     onError={handleUploadError}
                     onSuccess={handleUploadSuccess}
                     onUploadStart={handleUploadStart}
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                        // Detect file type from the actual file being uploaded
+                        const file = event.target.files?.[0];
+                        if (file) {
+                            const detectedType = getFileType(file.name);
+                            setCurrentUploadFileType(detectedType);
+                        }
+                    }}
                     style={{ display: 'none' }}
                     accept="image/*,.pdf"
                 />

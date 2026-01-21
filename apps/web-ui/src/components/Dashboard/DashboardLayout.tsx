@@ -3,6 +3,7 @@ import { Box, AppBar, Toolbar, IconButton, Typography, Avatar } from '@mui/mater
 import MenuIcon from '@mui/icons-material/Menu';
 // import LogoutIcon from '@mui/icons-material/Logout';
 import Sidebar from '../../pages/Sidebar/Sidebar';
+import NotificationBell from '../NotificationBell/NotificationBell';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../../stores/userStore';
@@ -102,6 +103,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                             {schoolName}
                         </Typography>
                     </Box>
+
+                    {/* Notification Bell */}
+                    {user && <NotificationBell />}
+
                     {/* <Button
                         color="inherit"
                         onClick={handleLogout}

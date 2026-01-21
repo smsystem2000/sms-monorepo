@@ -60,6 +60,7 @@ app.use('/api/school/:schoolId/attendance', attendanceRoutes);
 app.use('/api/school/:schoolId/leave', leaveRoutes);
 app.use('/api/school/:schoolId/parent-portal', parentPortalRoutes);
 app.use('/api/school/:schoolId/announcements', announcementRoutes);
+app.use('/api/school/:schoolId/notifications', notificationRoutes);
 app.use('/api/school/upload', uploadRoutes);
 
 // Health check endpoint

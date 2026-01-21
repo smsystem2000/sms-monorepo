@@ -18,6 +18,9 @@ export * from "./SchoolDashboard";
 // Teacher (User Service)
 export * from "./Teacher";
 
+// Teacher Dashboard (User Service)
+export * from "./TeacherDashboard";
+
 // Student (User Service)
 export * from "./Student";
 

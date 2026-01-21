@@ -108,7 +108,89 @@ const getMenus = async (req, res) => {
 };
 
 
+// Get Teacher Dashboard Stats
+const getTeacherDashboardStats = async (req, res) => {
+    try {
+        const { schoolId } = req.params;
+        const { teacherId } = req.user;
+
+        if (!schoolId) {
+            return res.status(400).json({
+                success: false,
+                message: "School ID is required",
+            });
+        }
+
+        if (!teacherId) {
+            return res.status(400).json({
+                success: false,
+                message: "Teacher ID is required",
+            });
+        }
+
+        const schoolDbName = await getSchoolDbName(schoolId);
+        const schoolDb = await getSchoolDbConnection(schoolDbName);
+
+        // Get teacher's classes
+        const Class = schoolDb.models.Class || schoolDb.model('Class', require('@sms/shared').ClassSchema);
+        const myClasses = await Class.find({ classTeacher: teacherId });
+        const totalClasses = myClasses.length;
+
+        // Get total students across all classes
+        const Student = schoolDb.models.Student || schoolDb.model('Student', studentSchema);
+        const classIds = myClasses.map(c => c.classId);
+        const totalStudents = await Student.countDocuments({ classId: { $in: classIds }, status: 'active' });
+
+        // Get today's schedule (simplified - you can enhance this with actual timetable data)
+        const today = new Date().getDay(); // 0-6
+        const periodsToday = totalClasses > 0 ? 5 : 0; // Simplified assumption
+
+        // Get pending leave requests (if teacher has approval rights)
+        let pendingLeaveRequests = 0;
+        try {
+            const Leave = schoolDb.models.Leave || schoolDb.model('Leave', require('@sms/shared').LeaveSchema);
+            pendingLeaveRequests = await Leave.countDocuments({
+                status: 'pending',
+                approverType: 'teacher',
+                approverId: teacherId
+            });
+        } catch (error) {
+            // Leave model might not exist
+            console.log("Leave data not available:", error.message);
+        }
+
+        // Get announcements count
+        let totalAnnouncements = 0;
+        try {
+            const Announcement = schoolDb.models.Announcement || schoolDb.model('Announcement', require('@sms/shared').AnnouncementSchema);
+            totalAnnouncements = await Announcement.countDocuments({ createdBy: teacherId });
+        } catch (error) {
+            console.log("Announcement data not available:", error.message);
+        }
+
+        res.status(200).json({
+            success: true,
+            data: {
+                totalClasses,
+                totalStudents,
+                periodsToday,
+                pendingLeaveRequests,
+                totalAnnouncements,
+            },
+        });
+    } catch (error) {
+        console.error("Error getting teacher dashboard stats:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to get teacher dashboard stats",
+            error: error.message,
+        });
+    }
+};
+
+
 module.exports = {
     getMenus,
     getSchoolDashboardStats,
+    getTeacherDashboardStats,
 }

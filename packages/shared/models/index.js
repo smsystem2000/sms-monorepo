@@ -35,6 +35,7 @@ module.exports = {
     // Announcements & Notifications
     AnnouncementSchema: require('./announcement.model'),
     NotificationSchema: require('./notification.model'),
+    EmailTemplateSchema: require('./EmailTemplate'),
 
     // Homework
     HomeworkSchema: require('./homework.model'),

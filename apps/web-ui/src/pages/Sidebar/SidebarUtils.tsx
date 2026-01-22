@@ -166,6 +166,12 @@ export const SchoolAdminMenuItems: SideBarMenuItemType[] = [
     path: "/school-admin/announcements",
     isExpandable: false,
   },
+  {
+    name: "Email Templates",
+    icon: <MuiIcons.MailOutline />,
+    path: "/school-admin/email-templates",
+    isExpandable: false,
+  },
 
 ];
 

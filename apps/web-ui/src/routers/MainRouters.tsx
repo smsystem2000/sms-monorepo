@@ -25,6 +25,8 @@ import SchoolAdminLeaveRequests from "../pages/SchoolAdmin/Leave/Requests";
 import SchoolLocation from "../pages/SchoolAdmin/SchoolLocation";
 import { TimetableConfig, TimetableMaster, ConflictManagement, SubstituteManagement } from "../pages/SchoolAdmin/Timetable";
 import SchoolAdminAnnouncements from "../pages/SchoolAdmin/Announcements";
+import EmailTemplateList from "../pages/SchoolAdmin/EmailTemplates";
+import EmailTemplateEditor from "../pages/SchoolAdmin/EmailTemplates/Editor";
 
 // Teacher Pages
 import TeacherDashboard from "../pages/Teacher/Dashboard";
@@ -122,6 +124,10 @@ const MainRouters = () => {
 
         {/* Announcements Routes (Admin) */}
         <Route path="/school-admin/announcements" element={<SchoolAdminAnnouncements />} />
+
+        {/* Email Templates Routes (Admin) */}
+        <Route path="/school-admin/email-templates" element={<EmailTemplateList />} />
+        <Route path="/school-admin/email-templates/:id" element={<EmailTemplateEditor />} />
 
         {/* Notifications */}
         <Route path="/school-admin/notifications" element={<NotificationsPage />} />

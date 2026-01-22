@@ -533,4 +533,4 @@ export const ParentMenuItems: SideBarMenuItemType[] = [
     isExpandable: false,
   },
 ];
-];
+

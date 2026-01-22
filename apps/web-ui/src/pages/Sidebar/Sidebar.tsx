@@ -1,15 +1,3 @@
-import './sidebar.scss';
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { SuperAdminMenuItems, SchoolAdminMenuItems, TeachersMenuItems, StudentsMenuItems, ParentMenuItems } from './SidebarUtils';
-import { Avatar, Toolbar, Typography, Divider } from '@mui/material';
-import LogoutIcon from '@mui/icons-material/Logout';
-import ExpandLess from '@mui/icons-material/ExpandLess';
-import ExpandMore from '@mui/icons-material/ExpandMore';
-import type { SideBarMenuItemType } from './SidebarUtils';
-import TokenService from '../../queries/token/tokenService';
-import { useUserStore } from '../../stores/userStore';
 import "./sidebar.scss";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -33,6 +21,7 @@ import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import type { SideBarMenuItemType } from "./SidebarUtils";
 import TokenService from "../../queries/token/tokenService";
+import { useUserStore } from "../../stores/userStore";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -174,9 +163,10 @@ const Sidebar = ({ isOpen, onClose, role, onLogout }: SidebarProps) => {
   const menuItems = getMenuItems();
 
   // Get user's full name
-  const userName = user ? `${user.firstName} ${user.lastName}` : TokenService.getUserName() || "User";
-  const profileImage = user?.profileImage || '';
-
+  const userName = user
+    ? `${user.firstName} ${user.lastName}`
+    : TokenService.getUserName() || "User";
+  const profileImage = user?.profileImage || "";
 
   return (
     <>
@@ -237,8 +227,6 @@ const Sidebar = ({ isOpen, onClose, role, onLogout }: SidebarProps) => {
             <Avatar
               alt={userName}
               src={profileImage}
-              alt="User Avatar"
-              src={""}
               sx={{
                 width: 60,
                 height: 60,
@@ -249,14 +237,6 @@ const Sidebar = ({ isOpen, onClose, role, onLogout }: SidebarProps) => {
             >
               {userName?.charAt(0).toUpperCase()}
             </Avatar>
-            <Typography style={{
-              fontWeight: '600',
-              color: 'white',
-              fontSize: '1rem',
-              whiteSpace: 'nowrap',
-            }}>
-              {userName}
-            </Typography>
             <div className="welcome-text" style={{ color: "#fff" }}>
               <Typography
                 style={{
@@ -266,7 +246,7 @@ const Sidebar = ({ isOpen, onClose, role, onLogout }: SidebarProps) => {
                   whiteSpace: "nowrap",
                 }}
               >
-                {name}
+                {userName}
               </Typography>
               <Typography
                 style={{

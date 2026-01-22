@@ -511,7 +511,7 @@ export const ParentMenuItems: SideBarMenuItemType[] = [
       {
         name: "Schedule",
         icon: <MuiIcons.Event />,
-        path: "/parent/exam/schedule",
+        path: "/parent/exam/scheduler",
       },
       {
         name: "Results",

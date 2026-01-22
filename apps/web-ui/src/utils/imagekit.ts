@@ -12,6 +12,7 @@ export const IMAGEKIT_FOLDERS = {
     PROFILE_IMAGES: '/profile_images',
     SIGNATURES: '/signatures',
     ANNOUNCEMENTS: '/announcements',
+    EMAIL_BANNERS: '/email_banners',
 } as const;
 
 // Interface for auth response

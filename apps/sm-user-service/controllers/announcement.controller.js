@@ -1,6 +1,7 @@
 const { getSchoolDbConnection } = require("../configs/db");
 const { getSchoolDbName } = require("../utils/schoolDbHelper");
 const { AnnouncementSchema: announcementSchema, NotificationSchema: notificationSchema, StudentSchema: studentSchema, ParentSchema: parentSchema, TeacherSchema: teacherSchema } = require("@sms/shared");
+const { sendAnnouncementEmail } = require("../utils/mailService");
 
 // Helper to get models for a specific school
 const getAnnouncementModels = (schoolDbName) => {
@@ -93,11 +94,18 @@ const createAnnouncement = async (req, res) => {
 
         await newAnnouncement.save();
 
-        // Create notifications for target audience
-        await createAnnouncementNotifications(
+        // Create notifications for target audience and collect recipients
+        const recipients = await createAnnouncementNotifications(
             Notification, Student, Parent, Teacher,
             schoolId, newAnnouncement, targetAudience, targetClasses
         );
+
+        // Send announcement emails (async, don't block on failure)
+        if (recipients && recipients.length > 0) {
+            sendAnnouncementEmails(schoolId, newAnnouncement, recipients).catch(error => {
+                console.error('Failed to send announcement emails:', error);
+            });
+        }
 
         res.status(201).json({
             success: true,
@@ -115,9 +123,11 @@ const createAnnouncement = async (req, res) => {
 };
 
 // Helper: Create notifications for announcement
+// Returns array of recipients for email sending
 const createAnnouncementNotifications = async (Notification, Student, Parent, Teacher, schoolId, announcement, targetAudience, targetClasses) => {
     try {
         const notifications = [];
+        const recipients = []; // Track recipients for email sending
 
         // Get target users based on audience
         let targetUsers = [];
@@ -126,25 +136,48 @@ const createAnnouncementNotifications = async (Notification, Student, Parent, Te
             const studentQuery = targetAudience === 'specific_class' && targetClasses?.length > 0
                 ? { schoolId, status: 'active', class: { $in: targetClasses } }
                 : { schoolId, status: 'active' };
-            const students = await Student.find(studentQuery, 'studentId firstName lastName class parentId');
-            students.forEach(s => targetUsers.push({ userId: s.studentId, userRole: 'student', student: s }));
+            const students = await Student.find(studentQuery, 'studentId firstName lastName class parentId email');
+            students.forEach(s => {
+                targetUsers.push({ userId: s.studentId, userRole: 'student', student: s });
+                // Add to email recipients if student has email
+                if (s.email) {
+                    recipients.push({ email: s.email, name: `${s.firstName} ${s.lastName}`, role: 'student' });
+                }
+            });
         }
 
         if (targetAudience === 'all' || targetAudience === 'parents' || targetAudience === 'specific_class') {
             // Get parents of target students
             const studentIds = targetUsers.filter(u => u.userRole === 'student').map(u => u.userId);
             if (studentIds.length > 0) {
-                const parents = await Parent.find({ schoolId, status: 'active', studentIds: { $in: studentIds } }, 'parentId firstName lastName');
-                parents.forEach(p => targetUsers.push({ userId: p.parentId, userRole: 'parent' }));
+                const parents = await Parent.find({ schoolId, status: 'active', studentIds: { $in: studentIds } }, 'parentId firstName lastName email');
+                parents.forEach(p => {
+                    targetUsers.push({ userId: p.parentId, userRole: 'parent' });
+                    // Add to email recipients if parent has email
+                    if (p.email) {
+                        recipients.push({ email: p.email, name: `${p.firstName} ${p.lastName}`, role: 'parent' });
+                    }
+                });
             } else if (targetAudience === 'parents') {
-                const parents = await Parent.find({ schoolId, status: 'active' }, 'parentId firstName lastName');
-                parents.forEach(p => targetUsers.push({ userId: p.parentId, userRole: 'parent' }));
+                const parents = await Parent.find({ schoolId, status: 'active' }, 'parentId firstName lastName email');
+                parents.forEach(p => {
+                    targetUsers.push({ userId: p.parentId, userRole: 'parent' });
+                    if (p.email) {
+                        recipients.push({ email: p.email, name: `${p.firstName} ${p.lastName}`, role: 'parent' });
+                    }
+                });
             }
         }
 
         if (targetAudience === 'all' || targetAudience === 'teachers') {
-            const teachers = await Teacher.find({ schoolId, status: 'active' }, 'teacherId firstName lastName');
-            teachers.forEach(t => targetUsers.push({ userId: t.teacherId, userRole: 'teacher' }));
+            const teachers = await Teacher.find({ schoolId, status: 'active' }, 'teacherId firstName lastName email');
+            teachers.forEach(t => {
+                targetUsers.push({ userId: t.teacherId, userRole: 'teacher' });
+                // Add to email recipients if teacher has email
+                if (t.email) {
+                    recipients.push({ email: t.email, name: `${t.firstName} ${t.lastName}`, role: 'teacher' });
+                }
+            });
         }
 
         // Create notifications in batches
@@ -168,8 +201,132 @@ const createAnnouncementNotifications = async (Notification, Student, Parent, Te
         if (notifications.length > 0) {
             await Notification.insertMany(notifications);
         }
+
+        return recipients; // Return recipients for email sending
     } catch (error) {
         console.error("Error creating announcement notifications:", error);
+        return []; // Return empty array on error
+    }
+};
+
+/**
+ * Send announcement emails to recipients
+ * Runs asynchronously and logs errors without throwing
+ */
+const sendAnnouncementEmails = async (schoolId, announcement, recipients) => {
+    try {
+        console.log(`Sending announcement emails to ${recipients.length} recipients...`);
+
+        const { sendEmail, resolvePlaceholders, getStyleTemplate } = require('@sms/shared/utils');
+        const { EmailTemplateSchema, SchoolModel } = require('@sms/shared/models');
+
+        // Fetch school details
+        const school = await SchoolModel.findOne({ schoolId });
+        const schoolDetails = {
+            name: school?.schoolName || 'School',
+            address: school?.schoolAddress || '',
+            email: school?.schoolEmail || '',
+            phone: school?.schoolPhone || '',
+            logo: school?.schoolLogo || '',
+        };
+
+        // Try to get custom template for announcements
+        let customTemplate = null;
+        try {
+            customTemplate = await EmailTemplateSchema.findOne({
+                schoolId,
+                templateType: 'announcement',
+                isActive: true
+            }).sort({ isDefault: -1, updatedAt: -1 });
+        } catch (err) {
+            console.log('No custom announcement template found, using default');
+        }
+
+        const styleTemplate = customTemplate?.styleTemplate || 'modern';
+        const templateSubject = customTemplate?.subject || 'Announcement: {{announcement.title}}';
+        const templateContent = customTemplate?.htmlContent || `
+            <h1>{{announcement.title}}</h1>
+            <p>Dear {{student.firstName || parent.father.name || teacher.fullName || 'User'}},</p>
+            <p>{{announcement.message}}</p>
+            <p>Best regards,<br/>{{school.name}}</p>
+        `;
+
+        // Send emails to each recipient with personalized data
+        const emailPromises = recipients.map(async (recipient) => {
+            try {
+                // Build recipient-specific data
+                const recipientData = {
+                    school: schoolDetails,
+                    announcement: {
+                        title: announcement.title,
+                        message: announcement.content,
+                        content: announcement.content,
+                        date: new Date(announcement.publishDate || announcement.createdAt).toLocaleDateString('en-IN'),
+                    },
+                };
+
+                // Add role-specific data with both camelCase and snake_case for compatibility
+                const userRole = (recipient.role || '').toLowerCase();
+                if (userRole === 'student') {
+                    const [firstName, ...lastNameParts] = (recipient.name || '').split(' ');
+                    const lastName = lastNameParts.join(' ');
+                    recipientData.student = {
+                        firstName, first_name: firstName,
+                        lastName, last_name: lastName,
+                        fullName: recipient.name, full_name: recipient.name
+                    };
+                } else if (userRole === 'parent') {
+                    recipientData.parent = {
+                        father: { name: recipient.name },
+                        mother: { name: recipient.name }, // Fallback
+                        guardian: { name: recipient.name } // Fallback
+                    };
+                } else if (userRole === 'teacher') {
+                    const [firstName, ...lastNameParts] = (recipient.name || '').split(' ');
+                    const lastName = lastNameParts.join(' ');
+                    recipientData.teacher = {
+                        firstName, first_name: firstName,
+                        lastName, last_name: lastName,
+                        fullName: recipient.name, full_name: recipient.name
+                    };
+                }
+
+                // Resolve placeholders
+                const resolvedSubject = resolvePlaceholders(templateSubject, recipientData);
+                const resolvedContent = resolvePlaceholders(templateContent, recipientData);
+
+                // Apply style template
+                const styledHTML = getStyleTemplate(styleTemplate, resolvedContent, {
+                    bannerImage: customTemplate?.bannerImage || recipientData.school.logo,
+                    schoolName: recipientData.school.name,
+                    schoolAddress: recipientData.school.address,
+                    schoolEmail: recipientData.school.email,
+                    schoolPhone: recipientData.school.phone,
+                });
+
+                // Send email
+                await sendEmail({
+                    to: recipient.email,
+                    subject: resolvedSubject,
+                    html: styledHTML,
+                    from: recipientData.school.name
+                });
+
+                return { success: true, email: recipient.email };
+            } catch (error) {
+                console.error(`Failed to send announcement to ${recipient.email}:`, error.message);
+                return { success: false, email: recipient.email, error: error.message };
+            }
+        });
+
+        const results = await Promise.allSettled(emailPromises);
+
+        const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+        const failCount = results.length - successCount;
+
+        console.log(`Announcement emails sent: ${successCount} succeeded, ${failCount} failed`);
+    } catch (error) {
+        console.error('Error in sendAnnouncementEmails:', error);
     }
 };
 

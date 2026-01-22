@@ -29,6 +29,9 @@ import {
   ConflictManagement,
   SubstituteManagement,
 } from "../pages/SchoolAdmin/Timetable";
+import SchoolAdminAnnouncements from "../pages/SchoolAdmin/Announcements";
+import EmailTemplateList from "../pages/SchoolAdmin/EmailTemplates";
+import EmailTemplateEditor from "../pages/SchoolAdmin/EmailTemplates/Editor";
 
 // Teacher Pages
 import TeacherDashboard from "../pages/Teacher/Dashboard";
@@ -38,6 +41,9 @@ import TeacherParents from "../pages/Teacher/Parents";
 import TeacherAttendance from "../pages/Teacher/Attendance";
 import TeacherProfile from "../pages/Teacher/Profile";
 import TeacherMyRequests from "../pages/Teacher/MyRequests";
+import TeacherHomework from "../pages/Teacher/Homework";
+import CreateHomework from "../pages/Teacher/Homework/CreateHomework";
+import TeacherAnnouncements from "../pages/Teacher/Announcements";
 
 // Student Pages
 import StudentDashboard from "../pages/Student/Dashboard";
@@ -49,8 +55,10 @@ import StudentProfile from "../pages/Student/Profile";
 import StudentMyRequests from "../pages/Student/MyRequests";
 import StudentApplyLeave from "../pages/Student/Leave/ApplyLeave";
 import StudentMyLeaves from "../pages/Student/Leave/MyLeaves";
+import StudentHomework from "../pages/Student/Homework";
+import StudentAnnouncements from "../pages/Student/Announcements";
 
-// Teacher Leave Pages (reuse Student structure with minor changes)
+// Teacher Leave Pages
 import TeacherApplyLeave from "../pages/Teacher/Leave/ApplyLeave";
 import TeacherMyLeaves from "../pages/Teacher/Leave/MyLeaves";
 import TeacherStudentLeaves from "../pages/Teacher/Leave/StudentLeaves";
@@ -58,6 +66,20 @@ import { MyTimetable as TeacherTimetable } from "../pages/Teacher/Timetable";
 
 // Parent Pages
 import ParentDashboard from "../pages/Parent/Dashboard";
+import ParentChildren from "../pages/Parent/Children";
+import ChildProfile from "../pages/Parent/Children/Profile";
+import ParentAnnouncements from "../pages/Parent/Announcements";
+import ParentHomework from "../pages/Parent/Homework";
+import ParentAttendance from "../pages/Parent/Attendance";
+import ParentTeachers from "../pages/Parent/Teachers";
+import ParentTimetable from "../pages/Parent/Timetable";
+import ParentApplyLeave from "../pages/Parent/Leave/ApplyLeave";
+import ParentLeaveHistory from "../pages/Parent/Leave/History";
+import ParentExamSchedule from "../pages/Parent/Exam/Schedule";
+import ParentExamResults from "../pages/Parent/Exam/Results";
+
+// Shared Pages
+import NotificationsPage from "../pages/Shared/Notifications";
 
 // Student Timetable
 import { MyTimetable as StudentTimetable } from "../pages/Student/Timetable";
@@ -132,14 +154,18 @@ const MainRouters = () => {
         />
 
         {/* Exam Management Routes (Admin) */}
-        <Route
-          path="/school-admin/exam/config"
-          element={<ExamConfiguration />}
-        />
-        <Route
-          path="/school-admin/exam/scheduler"
-          element={<ExamScheduler />}
-        />
+        <Route path="/school-admin/exam/config" element={<ExamConfiguration />} />
+        <Route path="/school-admin/exam/scheduler" element={<ExamScheduler />} />
+
+        {/* Announcements Routes (Admin) */}
+        <Route path="/school-admin/announcements" element={<SchoolAdminAnnouncements />} />
+
+        {/* Email Templates Routes (Admin) */}
+        <Route path="/school-admin/email-templates" element={<EmailTemplateList />} />
+        <Route path="/school-admin/email-templates/:id" element={<EmailTemplateEditor />} />
+
+        {/* Notifications */}
+        <Route path="/school-admin/notifications" element={<NotificationsPage />} />
 
         <Route path="/school-admin/location" element={<SchoolLocation />} />
         <Route path="/school-admin/profile" element={<SchoolAdminProfile />} />
@@ -155,16 +181,20 @@ const MainRouters = () => {
         <Route path="/teacher/my-requests" element={<TeacherMyRequests />} />
         <Route path="/teacher/leave/apply" element={<TeacherApplyLeave />} />
         <Route path="/teacher/leave/my" element={<TeacherMyLeaves />} />
-        <Route
-          path="/teacher/leave/students"
-          element={<TeacherStudentLeaves />}
-        />
-        <Route
-          path="/teacher/leave/students"
-          element={<TeacherStudentLeaves />}
-        />
+        <Route path="/teacher/leave/students" element={<TeacherStudentLeaves />} />
         <Route path="/teacher/timetable" element={<TeacherTimetable />} />
         <Route path="/teacher/exam/marks" element={<MarksEntry />} />
+
+        {/* Homework Routes (Teacher) */}
+        <Route path="/teacher/homework" element={<TeacherHomework />} />
+        <Route path="/teacher/homework/create" element={<CreateHomework />} />
+
+        {/* Announcements Routes (Teacher) */}
+        <Route path="/teacher/announcements" element={<TeacherAnnouncements />} />
+
+        {/* Notifications */}
+        <Route path="/teacher/notifications" element={<NotificationsPage />} />
+
         <Route path="/teacher/profile" element={<TeacherProfile />} />
       </Route>
 
@@ -181,15 +211,29 @@ const MainRouters = () => {
         <Route path="/student/my-requests" element={<StudentMyRequests />} />
         <Route path="/student/leave/apply" element={<StudentApplyLeave />} />
         <Route path="/student/leave/my" element={<StudentMyLeaves />} />
-        <Route path="/student/leave/my" element={<StudentMyLeaves />} />
         <Route path="/student/timetable" element={<StudentTimetable />} />
         <Route path="/student/exam/my-exams" element={<MyExams />} />
+        <Route path="/student/homework" element={<StudentHomework />} />
+        <Route path="/student/announcements" element={<StudentAnnouncements />} />
+        <Route path="/student/notifications" element={<NotificationsPage />} />
         <Route path="/student/profile" element={<StudentProfile />} />
       </Route>
 
       {/* Parent Routes */}
       <Route element={<ProtectedRoute allowedRoles={["parent"]} />}>
         <Route path="/parent/dashboard" element={<ParentDashboard />} />
+        <Route path="/parent/children" element={<ParentChildren />} />
+        <Route path="/parent/children/:studentId" element={<ChildProfile />} />
+        <Route path="/parent/announcements" element={<ParentAnnouncements />} />
+        <Route path="/parent/homework" element={<ParentHomework />} />
+        <Route path="/parent/attendance" element={<ParentAttendance />} />
+        <Route path="/parent/teachers" element={<ParentTeachers />} />
+        <Route path="/parent/timetable" element={<ParentTimetable />} />
+        <Route path="/parent/leave/apply" element={<ParentApplyLeave />} />
+        <Route path="/parent/leave/history" element={<ParentLeaveHistory />} />
+        <Route path="/parent/exam/schedule" element={<ParentExamSchedule />} />
+        <Route path="/parent/exam/results" element={<ParentExamResults />} />
+        <Route path="/parent/notifications" element={<NotificationsPage />} />
       </Route>
 
       {/* 404 Not Found - Catch All */}

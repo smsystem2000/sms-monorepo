@@ -61,11 +61,13 @@ import CardMembership from "@mui/icons-material/CardMembership";
 import Delete from "@mui/icons-material/Delete";
 import Save from "@mui/icons-material/Save";
 import Edit from "@mui/icons-material/Edit";
+import { CalendarMonth, Create, Notifications } from "@mui/icons-material";
 import { Create, Circle } from "@mui/icons-material";
 
 export const MuiIcons = {
   Dashboard,
   Create,
+  CalendarMonth,
   AccountCircle,
   ExpandLessIcon,
   CheckCircle,
@@ -129,5 +131,6 @@ export const MuiIcons = {
   Save,
   Edit,
   Warning,
+  Notifications,
   Circle,
 };

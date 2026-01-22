@@ -26,8 +26,8 @@ import {
     Edit as EditIcon,
     School as SchoolIcon,
 } from '@mui/icons-material';
-import TokenService from '../../queries/token/tokenService';
-import { useGetSchoolAdminById } from '../../queries/SchoolAdmin';
+
+import { useUserStore } from '../../stores/userStore';
 
 const SchoolAdminProfile = () => {
     const [isEditing, setIsEditing] = useState(false);
@@ -37,25 +37,23 @@ const SchoolAdminProfile = () => {
         severity: 'success'
     });
 
-    // Get IDs from token for API calls
-    const decodedToken = TokenService.decodeToken();
-    const userId = decodedToken?.userId || decodedToken?.adminId || '';
-    const schoolId = decodedToken?.schoolId || '';
-    const role = decodedToken?.role || 'sch_admin';
+    // Get user and school data from Zustand store
+    const { user: admin, school, isLoading: adminLoading, error: adminError } = useUserStore();
 
-    // Fetch admin details from API (includes aggregated schoolName)
-    const { data: adminData, isLoading: adminLoading, error: adminError } = useGetSchoolAdminById(userId);
-    const admin = adminData?.data;
+    // Derivations for legacy compatibility and clear naming
+    const userId = admin?.userId || '';
+    const schoolId = school?.schoolId || '';
+    const role = admin?.role || 'sch_admin';
 
-    // Use aggregated data from API response
-    const schoolName = admin?.schoolName || schoolId;
+    // Use aggregated data from store
+    const schoolName = admin?.schoolName || school?.schoolName || schoolId;
 
-    // User details from API
+    // User details from store
     const userName = admin?.firstName
         ? `${admin.firstName} ${admin.lastName || ''}`.trim()
-        : admin?.username || decodedToken?.email?.split('@')[0] || 'Admin';
+        : admin?.username || admin?.email?.split('@')[0] || 'Admin';
     const userEmail = admin?.email || '';
-    const userPhone = admin?.contactNumber || admin?.phone || admin?.phoneNumber || '';
+    const userPhone = admin?.phone || '';
 
     const [formData, setFormData] = useState({
         firstName: '',

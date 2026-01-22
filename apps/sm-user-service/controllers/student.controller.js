@@ -233,12 +233,36 @@ const getStudentById = async (req, res) => {
             }
         }
 
-        // Fetch parent details for parentName
+        // Fetch parent details for parentName and fatherName
         if (student.parentId) {
             const Parent = getParentModel(schoolDbName);
             const parent = await Parent.findOne({ parentId: student.parentId });
             if (parent) {
                 studentObj.parentName = `${parent.firstName} ${parent.lastName}`;
+                studentObj.parentRelationship = parent.relationship;
+
+                // For fatherName, prioritize father > mother > guardian
+                if (parent.relationship === 'father') {
+                    studentObj.fatherName = `${parent.firstName} ${parent.lastName}`;
+                } else {
+                    // Try to find father from all parents linked to this student
+                    const allParents = await Parent.find({ studentIds: student.studentId });
+                    const father = allParents.find(p => p.relationship === 'father');
+                    const mother = allParents.find(p => p.relationship === 'mother');
+                    const guardian = allParents.find(p => p.relationship === 'guardian');
+
+                    if (father) {
+                        studentObj.fatherName = `${father.firstName} ${father.lastName}`;
+                    } else if (mother) {
+                        studentObj.fatherName = `${mother.firstName} ${mother.lastName}`;
+                        studentObj.fatherNameLabel = "Mother's Name";
+                    } else if (guardian) {
+                        studentObj.fatherName = `${guardian.firstName} ${guardian.lastName}`;
+                        studentObj.fatherNameLabel = "Guardian's Name";
+                    } else {
+                        studentObj.fatherName = `${parent.firstName} ${parent.lastName}`;
+                    }
+                }
             }
         }
 

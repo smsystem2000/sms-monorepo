@@ -231,11 +231,69 @@ const styles = StyleSheet.create({
         fontSize: 7,
         color: '#999',
     },
+    // Schedule table
+    scheduleSection: {
+        marginTop: 15,
+        marginBottom: 10,
+    },
+    scheduleTitle: {
+        fontSize: 11,
+        fontWeight: 'bold',
+        color: '#1976D2',
+        marginBottom: 8,
+    },
+    scheduleTable: {
+        border: '1pt solid #ddd',
+    },
+    scheduleHeader: {
+        flexDirection: 'row',
+        backgroundColor: '#f5f5f5',
+        borderBottom: '1pt solid #ddd',
+    },
+    scheduleRow: {
+        flexDirection: 'row',
+        borderBottom: '0.5pt solid #eee',
+    },
+    scheduleCell: {
+        padding: 6,
+        fontSize: 9,
+    },
+    scheduleCellHeader: {
+        padding: 6,
+        fontSize: 9,
+        fontWeight: 'bold',
+    },
+    scheduleDate: {
+        width: '25%',
+    },
+    scheduleTime: {
+        width: '25%',
+    },
+    scheduleSubject: {
+        width: '30%',
+    },
+    scheduleSign: {
+        width: '20%',
+        alignItems: 'center',
+    },
+    signLine: {
+        borderBottom: '0.5pt solid #999',
+        width: 50,
+        height: 12,
+    },
 });
+
+export interface ExamScheduleItem {
+    date: string;
+    startTime: string;
+    endTime: string;
+    subjectName: string;
+}
 
 export interface AdmitCardPDFProps {
     studentName: string;
     fatherName: string;
+    fatherNameLabel?: string;
     rollNumber: string;
     studentId: string;
     className: string;
@@ -252,11 +310,13 @@ export interface AdmitCardPDFProps {
     academicYear: string;
     startDate: string;
     endDate: string;
+    examSchedule?: ExamScheduleItem[];
 }
 
 const AdmitCardPDF: React.FC<AdmitCardPDFProps> = ({
     studentName,
     fatherName,
+    fatherNameLabel = "Father's Name",
     rollNumber,
     studentId,
     className,
@@ -273,6 +333,7 @@ const AdmitCardPDF: React.FC<AdmitCardPDFProps> = ({
     academicYear,
     startDate,
     endDate,
+    examSchedule = [],
 }) => {
     const formatDate = (dateStr: string) => {
         return new Date(dateStr).toLocaleDateString('en-IN', {
@@ -280,6 +341,14 @@ const AdmitCardPDF: React.FC<AdmitCardPDFProps> = ({
             year: 'numeric',
             month: 'long',
             day: 'numeric',
+        });
+    };
+
+    const formatShortDate = (dateStr: string) => {
+        return new Date(dateStr).toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
         });
     };
 
@@ -299,7 +368,7 @@ const AdmitCardPDF: React.FC<AdmitCardPDFProps> = ({
                             </View>
                         </View>
                         <View style={styles.admitCardBadge}>
-                            <Text style={styles.admitCardBadgeText}>E - ADMIT CARD</Text>
+                            <Text style={styles.admitCardBadgeText}>ADMIT CARD</Text>
                         </View>
                     </View>
 
@@ -322,7 +391,7 @@ const AdmitCardPDF: React.FC<AdmitCardPDFProps> = ({
                                         <Text style={styles.tableValue}>{studentName}</Text>
                                     </View>
                                     <View style={styles.tableRow}>
-                                        <Text style={styles.tableLabel}>Father's Name</Text>
+                                        <Text style={styles.tableLabel}>{fatherNameLabel}</Text>
                                         <Text style={styles.tableValue}>{fatherName}</Text>
                                     </View>
                                     <View style={styles.tableRow}>
@@ -373,6 +442,39 @@ const AdmitCardPDF: React.FC<AdmitCardPDFProps> = ({
                                 <Text style={styles.captionText}>Signature of Candidate</Text>
                             </View>
                         </View>
+
+                        {/* Exam Schedule Table */}
+                        {examSchedule.length > 0 && (
+                            <View style={styles.scheduleSection}>
+                                <Text style={styles.scheduleTitle}>Exam Schedule</Text>
+                                <View style={styles.scheduleTable}>
+                                    {/* Header */}
+                                    <View style={styles.scheduleHeader}>
+                                        <Text style={[styles.scheduleCellHeader, styles.scheduleDate]}>Date</Text>
+                                        <Text style={[styles.scheduleCellHeader, styles.scheduleTime]}>Time</Text>
+                                        <Text style={[styles.scheduleCellHeader, styles.scheduleSubject]}>Subject</Text>
+                                        <Text style={[styles.scheduleCellHeader, styles.scheduleSign]}>Invigilator Sign</Text>
+                                    </View>
+                                    {/* Rows */}
+                                    {examSchedule.map((sch, index) => (
+                                        <View style={styles.scheduleRow} key={index}>
+                                            <Text style={[styles.scheduleCell, styles.scheduleDate]}>
+                                                {formatShortDate(sch.date)}
+                                            </Text>
+                                            <Text style={[styles.scheduleCell, styles.scheduleTime]}>
+                                                {sch.startTime} - {sch.endTime}
+                                            </Text>
+                                            <Text style={[styles.scheduleCell, styles.scheduleSubject]}>
+                                                {sch.subjectName}
+                                            </Text>
+                                            <View style={[styles.scheduleCell, styles.scheduleSign]}>
+                                                <View style={styles.signLine} />
+                                            </View>
+                                        </View>
+                                    ))}
+                                </View>
+                            </View>
+                        )}
 
                         {/* Divider */}
                         <View style={styles.divider} />

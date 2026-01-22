@@ -36,6 +36,10 @@ import {
     Save as SaveIcon,
     Schedule as ScheduleIcon,
 } from '@mui/icons-material';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import { parse, format } from 'date-fns';
 import {
     useGetActiveConfig,
     useCreateConfig,
@@ -43,6 +47,7 @@ import {
     useUpsertPeriod,
     useRemovePeriod,
     useRemoveShift,
+    useToggleTimetableDisable,
 } from '../../../queries/Timetable';
 import type { Period, Shift } from '../../../types/timetable.types';
 import TokenService from '../../../queries/token/tokenService';
@@ -67,6 +72,53 @@ const PERIOD_TYPES = [
     { value: 'free', label: 'Free/Study' },
 ];
 
+// Custom styling for time pickers
+const timePickerSlotProps = {
+    textField: {
+        fullWidth: true,
+        variant: 'outlined' as const,
+        sx: {
+            '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                backgroundColor: 'background.paper',
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                    backgroundColor: 'action.hover',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'primary.main',
+                    },
+                },
+                '&.Mui-focused': {
+                    backgroundColor: 'background.paper',
+                    boxShadow: '0 0 0 3px rgba(25, 118, 210, 0.1)',
+                },
+            },
+            '& .MuiInputLabel-root': {
+                fontWeight: 500,
+            },
+        },
+    },
+    popper: {
+        sx: {
+            '& .MuiPaper-root': {
+                borderRadius: 3,
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+            },
+            '& .MuiClock-clock': {
+                backgroundColor: 'background.paper',
+            },
+            '& .MuiClockPointer-root': {
+                backgroundColor: 'primary.main',
+            },
+            '& .MuiClockNumber-root': {
+                '&.Mui-selected': {
+                    backgroundColor: 'primary.main',
+                },
+            },
+        },
+    },
+};
+
 interface PeriodDialogProps {
     open: boolean;
     onClose: () => void;
@@ -88,7 +140,20 @@ const PeriodDialog = ({ open, onClose, onSave, editData, shifts, nextPeriodNumbe
         isDoublePeriod: false,
     });
 
+    const [startTimeDate, setStartTimeDate] = useState<Date | null>(null);
+    const [endTimeDate, setEndTimeDate] = useState<Date | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
+
+    // Helper to convert time string to Date
+    const parseTimeString = (timeStr: string): Date => {
+        return parse(timeStr, 'HH:mm', new Date());
+    };
+
+    // Helper to convert Date to time string
+    const formatTimeToString = (date: Date | null): string => {
+        if (!date) return '';
+        return format(date, 'HH:mm');
+    };
 
     // Sync formData with editData or reset for new period
     useEffect(() => {
@@ -104,6 +169,8 @@ const PeriodDialog = ({ open, onClose, onSave, editData, shifts, nextPeriodNumbe
                     shiftId: editData.shiftId || '',
                     isDoublePeriod: editData.isDoublePeriod || false,
                 });
+                setStartTimeDate(parseTimeString(editData.startTime || '08:00'));
+                setEndTimeDate(parseTimeString(editData.endTime || '08:45'));
             } else {
                 // New period - auto-increment period number
                 setFormData({
@@ -116,6 +183,8 @@ const PeriodDialog = ({ open, onClose, onSave, editData, shifts, nextPeriodNumbe
                     shiftId: '',
                     isDoublePeriod: false,
                 });
+                setStartTimeDate(parseTimeString('08:00'));
+                setEndTimeDate(parseTimeString('08:45'));
             }
             setErrors({});
         }
@@ -127,15 +196,33 @@ const PeriodDialog = ({ open, onClose, onSave, editData, shifts, nextPeriodNumbe
         if (errors[field]) {
             setErrors((prev) => ({ ...prev, [field]: '' }));
         }
+    };
 
-        // Auto-calculate duration when times change
-        if (field === 'startTime' || field === 'endTime') {
-            const start = field === 'startTime' ? value : formData.startTime;
-            const end = field === 'endTime' ? value : formData.endTime;
-            if (start && end) {
-                const [sh, sm] = start.split(':').map(Number);
-                const [eh, em] = end.split(':').map(Number);
-                const duration = (eh * 60 + em) - (sh * 60 + sm);
+    const handleStartTimeChange = (date: Date | null) => {
+        setStartTimeDate(date);
+        if (date) {
+            const timeStr = formatTimeToString(date);
+            setFormData((prev) => ({ ...prev, startTime: timeStr }));
+            // Auto-calculate duration
+            if (endTimeDate) {
+                const duration = (endTimeDate.getHours() * 60 + endTimeDate.getMinutes()) -
+                    (date.getHours() * 60 + date.getMinutes());
+                if (duration > 0) {
+                    setFormData((prev) => ({ ...prev, duration }));
+                }
+            }
+        }
+    };
+
+    const handleEndTimeChange = (date: Date | null) => {
+        setEndTimeDate(date);
+        if (date) {
+            const timeStr = formatTimeToString(date);
+            setFormData((prev) => ({ ...prev, endTime: timeStr }));
+            // Auto-calculate duration
+            if (startTimeDate) {
+                const duration = (date.getHours() * 60 + date.getMinutes()) -
+                    (startTimeDate.getHours() * 60 + startTimeDate.getMinutes());
                 if (duration > 0) {
                     setFormData((prev) => ({ ...prev, duration }));
                 }
@@ -171,111 +258,109 @@ const PeriodDialog = ({ open, onClose, onSave, editData, shifts, nextPeriodNumbe
     };
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-            <DialogTitle>{editData ? 'Edit Period' : 'Add Period'}</DialogTitle>
-            <DialogContent>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-                    <Grid container spacing={2}>
-                        <Grid size={{ xs: 6 }}>
-                            <TextField
-                                label="Period Number"
-                                type="number"
-                                fullWidth
-                                value={formData.periodNumber}
-                                onChange={(e) => handleChange('periodNumber', parseInt(e.target.value))}
-                                error={!!errors.periodNumber}
-                                helperText={errors.periodNumber}
-                            />
+        <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+                <DialogTitle>{editData ? 'Edit Period' : 'Add Period'}</DialogTitle>
+                <DialogContent>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+                        <Grid container spacing={2}>
+                            <Grid size={{ xs: 6 }}>
+                                <TextField
+                                    label="Period Number"
+                                    type="number"
+                                    fullWidth
+                                    value={formData.periodNumber}
+                                    onChange={(e) => handleChange('periodNumber', parseInt(e.target.value))}
+                                    error={!!errors.periodNumber}
+                                    helperText={errors.periodNumber}
+                                />
+                            </Grid>
+                            <Grid size={{ xs: 6 }}>
+                                <TextField
+                                    label="Period Name"
+                                    fullWidth
+                                    value={formData.name}
+                                    onChange={(e) => handleChange('name', e.target.value)}
+                                    placeholder="e.g., Period 1, Break, Lunch"
+                                    error={!!errors.name}
+                                    helperText={errors.name}
+                                />
+                            </Grid>
                         </Grid>
-                        <Grid size={{ xs: 6 }}>
-                            <TextField
-                                label="Period Name"
-                                fullWidth
-                                value={formData.name}
-                                onChange={(e) => handleChange('name', e.target.value)}
-                                placeholder="e.g., Period 1, Break, Lunch"
-                                error={!!errors.name}
-                                helperText={errors.name}
-                            />
+                        <Grid container spacing={2}>
+                            <Grid size={{ xs: 4 }}>
+                                <TimePicker
+                                    label="Start Time"
+                                    value={startTimeDate}
+                                    onChange={handleStartTimeChange}
+                                    slotProps={timePickerSlotProps}
+                                />
+                            </Grid>
+                            <Grid size={{ xs: 4 }}>
+                                <TimePicker
+                                    label="End Time"
+                                    value={endTimeDate}
+                                    onChange={handleEndTimeChange}
+                                    slotProps={timePickerSlotProps}
+                                />
+                            </Grid>
+                            <Grid size={{ xs: 4 }}>
+                                <TextField
+                                    label="Duration (min)"
+                                    type="number"
+                                    fullWidth
+                                    value={formData.duration}
+                                    onChange={(e) => handleChange('duration', parseInt(e.target.value))}
+                                />
+                            </Grid>
                         </Grid>
-                    </Grid>
-                    <Grid container spacing={2}>
-                        <Grid size={{ xs: 4 }}>
-                            <TextField
-                                label="Start Time"
-                                type="time"
-                                fullWidth
-                                value={formData.startTime}
-                                onChange={(e) => handleChange('startTime', e.target.value)}
-                                slotProps={{ inputLabel: { shrink: true } }}
-                            />
-                        </Grid>
-                        <Grid size={{ xs: 4 }}>
-                            <TextField
-                                label="End Time"
-                                type="time"
-                                fullWidth
-                                value={formData.endTime}
-                                onChange={(e) => handleChange('endTime', e.target.value)}
-                                slotProps={{ inputLabel: { shrink: true } }}
-                            />
-                        </Grid>
-                        <Grid size={{ xs: 4 }}>
-                            <TextField
-                                label="Duration (min)"
-                                type="number"
-                                fullWidth
-                                value={formData.duration}
-                                onChange={(e) => handleChange('duration', parseInt(e.target.value))}
-                            />
-                        </Grid>
-                    </Grid>
-                    <FormControl fullWidth error={!!errors.type}>
-                        <InputLabel>Period Type</InputLabel>
-                        <Select
-                            value={formData.type}
-                            label="Period Type"
-                            onChange={(e) => handleChange('type', e.target.value)}
-                        >
-                            {PERIOD_TYPES.map((t) => (
-                                <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>
-                            ))}
-                        </Select>
-                        {errors.type && <Typography variant="caption" color="error" sx={{ ml: 2, mt: 0.5 }}>{errors.type}</Typography>}
-                    </FormControl>
-                    {shifts.length > 0 && (
-                        <FormControl fullWidth>
-                            <InputLabel>Shift (Optional)</InputLabel>
+                        <FormControl fullWidth error={!!errors.type}>
+                            <InputLabel>Period Type</InputLabel>
                             <Select
-                                value={formData.shiftId || ''}
-                                label="Shift (Optional)"
-                                onChange={(e) => handleChange('shiftId', e.target.value)}
+                                value={formData.type}
+                                label="Period Type"
+                                onChange={(e) => handleChange('type', e.target.value)}
                             >
-                                <MenuItem value="">No Shift</MenuItem>
-                                {shifts.map((s) => (
-                                    <MenuItem key={s.shiftId} value={s.shiftId}>{s.name}</MenuItem>
+                                {PERIOD_TYPES.map((t) => (
+                                    <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>
                                 ))}
                             </Select>
+                            {errors.type && <Typography variant="caption" color="error" sx={{ ml: 2, mt: 0.5 }}>{errors.type}</Typography>}
                         </FormControl>
-                    )}
-                    {formData.type === 'lab' && (
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={formData.isDoublePeriod}
-                                    onChange={(e) => handleChange('isDoublePeriod', e.target.checked)}
-                                />
-                            }
-                            label="This is a double period"
-                        />
-                    )}
-                </Box>
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={onClose}>Cancel</Button>
-                <Button onClick={handleSubmit} variant="contained">{editData ? 'Update' : 'Add'}</Button>
-            </DialogActions>
-        </Dialog>
+                        {shifts.length > 0 && (
+                            <FormControl fullWidth>
+                                <InputLabel>Shift (Optional)</InputLabel>
+                                <Select
+                                    value={formData.shiftId || ''}
+                                    label="Shift (Optional)"
+                                    onChange={(e) => handleChange('shiftId', e.target.value)}
+                                >
+                                    <MenuItem value="">No Shift</MenuItem>
+                                    {shifts.map((s) => (
+                                        <MenuItem key={s.shiftId} value={s.shiftId}>{s.name}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        )}
+                        {formData.type === 'lab' && (
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={formData.isDoublePeriod}
+                                        onChange={(e) => handleChange('isDoublePeriod', e.target.checked)}
+                                    />
+                                }
+                                label="This is a double period"
+                            />
+                        )}
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={onClose}>Cancel</Button>
+                    <Button onClick={handleSubmit} variant="contained">{editData ? 'Update' : 'Add'}</Button>
+                </DialogActions>
+            </Dialog>
+        </LocalizationProvider>
     );
 };
 
@@ -293,6 +378,13 @@ const TimetableConfigPage = () => {
     const removePeriod = useRemovePeriod(schoolId, config?.configId || '');
     const removeShift = useRemoveShift(schoolId, config?.configId || '');
     const updateConfig = useUpdateConfig(schoolId, config?.configId || '');
+    const toggleDisable = useToggleTimetableDisable(schoolId);
+
+    // Temporary disable state
+    const [disableDialogOpen, setDisableDialogOpen] = useState(false);
+    const [disableFrom, setDisableFrom] = useState('');
+    const [disableTo, setDisableTo] = useState('');
+    const [disableReason, setDisableReason] = useState('');
 
     const handleCreateConfig = async () => {
         if (!newAcademicYear) return;
@@ -468,6 +560,56 @@ const TimetableConfigPage = () => {
                         </Grid>
                     </Paper>
 
+                    {/* Temporary Disable Section */}
+                    <Paper sx={{
+                        p: 3,
+                        mb: 3,
+                        bgcolor: config.temporarilyDisabled ? 'warning.50' : 'transparent',
+                        border: config.temporarilyDisabled ? '2px solid' : 'none',
+                        borderColor: 'warning.main'
+                    }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <Box>
+                                <Typography variant="h6">
+                                    {config.temporarilyDisabled ? '⚠️ Timetable Temporarily Disabled' : 'Temporary Disable'}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    {config.temporarilyDisabled
+                                        ? 'Exam scheduling will NOT check for class conflicts during this period.'
+                                        : 'Disable timetable temporarily during exams or special events.'}
+                                </Typography>
+                            </Box>
+                            {config.temporarilyDisabled ? (
+                                <Button
+                                    variant="contained"
+                                    color="success"
+                                    onClick={() => toggleDisable.mutate({ disabled: false })}
+                                    disabled={toggleDisable.isPending}
+                                >
+                                    {toggleDisable.isPending ? <CircularProgress size={20} /> : 'Enable Timetable'}
+                                </Button>
+                            ) : (
+                                <Button
+                                    variant="outlined"
+                                    color="warning"
+                                    onClick={() => setDisableDialogOpen(true)}
+                                >
+                                    Disable Temporarily
+                                </Button>
+                            )}
+                        </Box>
+                        {config.temporarilyDisabled && (
+                            <Alert severity="warning" sx={{ mt: 2 }}>
+                                <Typography variant="body2">
+                                    {config.disabledFrom && config.disabledTo
+                                        ? `Disabled from ${new Date(config.disabledFrom).toLocaleDateString()} to ${new Date(config.disabledTo).toLocaleDateString()}`
+                                        : 'Disabled indefinitely (no date range specified)'}
+                                    {config.disabledReason && ` — Reason: ${config.disabledReason}`}
+                                </Typography>
+                            </Alert>
+                        )}
+                    </Paper>
+
                     {/* Working Days */}
                     <Paper sx={{ p: 3, mb: 3 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
@@ -597,6 +739,74 @@ const TimetableConfigPage = () => {
                 shifts={config?.shifts || []}
                 nextPeriodNumber={(config?.periods?.length || 0) + 1}
             />
+
+            {/* Disable Timetable Dialog */}
+            <Dialog open={disableDialogOpen} onClose={() => setDisableDialogOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Temporarily Disable Timetable</DialogTitle>
+                <DialogContent>
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                        When disabled, exam scheduling will NOT check for teacher class conflicts.
+                    </Alert>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+                        <Grid container spacing={2}>
+                            <Grid size={{ xs: 6 }}>
+                                <TextField
+                                    label="From Date (Optional)"
+                                    type="date"
+                                    fullWidth
+                                    value={disableFrom}
+                                    onChange={(e) => setDisableFrom(e.target.value)}
+                                    slotProps={{ inputLabel: { shrink: true } }}
+                                />
+                            </Grid>
+                            <Grid size={{ xs: 6 }}>
+                                <TextField
+                                    label="To Date (Optional)"
+                                    type="date"
+                                    fullWidth
+                                    value={disableTo}
+                                    onChange={(e) => setDisableTo(e.target.value)}
+                                    slotProps={{ inputLabel: { shrink: true } }}
+                                />
+                            </Grid>
+                        </Grid>
+                        <TextField
+                            label="Reason (Optional)"
+                            fullWidth
+                            multiline
+                            rows={2}
+                            value={disableReason}
+                            onChange={(e) => setDisableReason(e.target.value)}
+                            placeholder="e.g., Final Exams, Sports Week, etc."
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDisableDialogOpen(false)}>Cancel</Button>
+                    <Button
+                        variant="contained"
+                        color="warning"
+                        onClick={() => {
+                            toggleDisable.mutate({
+                                disabled: true,
+                                disabledFrom: disableFrom || undefined,
+                                disabledTo: disableTo || undefined,
+                                disabledReason: disableReason || undefined,
+                            }, {
+                                onSuccess: () => {
+                                    setDisableDialogOpen(false);
+                                    setDisableFrom('');
+                                    setDisableTo('');
+                                    setDisableReason('');
+                                }
+                            });
+                        }}
+                        disabled={toggleDisable.isPending}
+                    >
+                        {toggleDisable.isPending ? <CircularProgress size={20} /> : 'Disable Timetable'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };

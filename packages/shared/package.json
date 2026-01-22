@@ -5,10 +5,12 @@
     "exports": {
         ".": "./models/index.js",
         "./models": "./models/index.js",
-        "./middlewares": "./middlewares/index.js"
+        "./middlewares": "./middlewares/index.js",
+        "./utils": "./utils/index.js"
     },
     "dependencies": {
         "jsonwebtoken": "^9.0.3",
-        "mongoose": "^9.1.1"
+        "mongoose": "^9.1.1",
+        "nodemailer": "^7.0.12"
     }
 }

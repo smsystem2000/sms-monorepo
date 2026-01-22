@@ -34,7 +34,7 @@ router.get("/class-leaves", checkRole(["teacher"]), getStudentLeavesForTeacher);
 router.post("/apply", checkRole(["student", "teacher"]), applyLeave);
 
 // Get my leave requests
-router.get("/my", checkRole(["student", "teacher"]), getMyLeaves);
+router.get("/my", checkRole(["student", "teacher", "parent"]), getMyLeaves);
 
 // Get specific leave by ID
 router.get("/:leaveId", checkRole(["student", "teacher", "sch_admin"]), getLeaveById);

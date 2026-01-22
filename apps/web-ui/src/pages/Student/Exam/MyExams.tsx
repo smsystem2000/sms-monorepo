@@ -40,9 +40,9 @@ import {
     useGetExams,
     useGetExamSchedule
 } from '../../../queries/Exam';
-import { useGetStudentById } from '../../../queries/Student';
 import { useGetSubjects } from '../../../queries/Subject';
 import TokenService from '../../../queries/token/tokenService';
+import { useUserStore } from '../../../stores/userStore';
 import { AdmitCardPDF } from '../../../components/PDFLayouts';
 
 const MyExams = () => {
@@ -173,8 +173,8 @@ const AdmitCardBlock = ({ schoolId, exam, studentId }: { schoolId: string, exam:
         severity: 'info'
     });
 
+    const { user: student } = useUserStore();
     const { data: admitCard, isLoading } = useGetAdmitCard(schoolId, exam.examId, studentId);
-    const { data: studentData } = useGetStudentById(schoolId, studentId);
     const { data: scheduleData } = useGetExamSchedule(schoolId, exam.examId);
     const { data: subjectsData } = useGetSubjects(schoolId);
 
@@ -190,15 +190,14 @@ const AdmitCardBlock = ({ schoolId, exam, studentId }: { schoolId: string, exam:
     // Get exam schedule for this student's class
     const examSchedule = scheduleData?.data || [];
 
-    // Get data from student profile API - cast to any for extended API fields
-    const student = studentData?.data as any;
     const admitCardData = admitCard?.data;
 
     // Student details from profile API
     const studentName = student?.firstName
         ? `${student.firstName} ${student.lastName || ''}`.trim()
         : 'Student Name';
-    const fatherName = student?.fatherName || student?.parentName || 'Father Name';
+    const fatherName = student?.fatherName || student?.parentName || 'N/A';
+    const fatherNameLabel = student?.fatherNameLabel || "Father's Name";
     const rollNumber = admitCardData?.rollNumber || student?.rollNumber || 'N/A';
     const className = student?.className || admitCardData?.classId || '';
     const sectionName = student?.sectionName || admitCardData?.sectionId || '';
@@ -225,6 +224,7 @@ const AdmitCardBlock = ({ schoolId, exam, studentId }: { schoolId: string, exam:
                 <AdmitCardPDF
                     studentName={studentName}
                     fatherName={fatherName}
+                    fatherNameLabel={fatherNameLabel}
                     rollNumber={rollNumber}
                     studentId={studentId}
                     className={className}
@@ -241,6 +241,12 @@ const AdmitCardBlock = ({ schoolId, exam, studentId }: { schoolId: string, exam:
                     academicYear={exam.academicYear || '2025-2026'}
                     startDate={exam.startDate}
                     endDate={exam.endDate}
+                    examSchedule={examSchedule.map((sch: any) => ({
+                        date: sch.date,
+                        startTime: sch.startTime,
+                        endTime: sch.endTime,
+                        subjectName: getSubjectName(sch.subjectId),
+                    }))}
                 />
             ).toBlob();
 
@@ -422,7 +428,7 @@ const AdmitCardBlock = ({ schoolId, exam, studentId }: { schoolId: string, exam:
                                 </Box>
                             </Box>
                             <Chip
-                                label="E - ADMIT CARD"
+                                label="ADMIT CARD"
                                 sx={{
                                     mt: 1,
                                     bgcolor: '#ff9800',
@@ -460,7 +466,7 @@ const AdmitCardBlock = ({ schoolId, exam, studentId }: { schoolId: string, exam:
                                                 </TableRow>
                                                 <TableRow>
                                                     <TableCell sx={{ bgcolor: '#f5f5f5', fontWeight: 600 }}>
-                                                        Father's Name
+                                                        {fatherNameLabel}
                                                     </TableCell>
                                                     <TableCell>{fatherName}</TableCell>
                                                 </TableRow>

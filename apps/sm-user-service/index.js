@@ -13,6 +13,11 @@ const subjectRoutes = require('./routes/subject.routes');
 const attendanceRoutes = require('./routes/attendance.routes');
 const leaveRoutes = require('./routes/leave.routes');
 const uploadRoutes = require('./routes/upload.routes');
+const parentPortalRoutes = require('./routes/parent-portal.routes');
+const announcementRoutes = require('./routes/announcement.routes');
+const notificationRoutes = require('./routes/notification.routes');
+const emailTemplateRoutes = require('./routes/emailTemplate.routes');
+const testEmailRoutes = require('./routes/testEmail.routes');
 
 const app = express();
 
@@ -55,6 +60,11 @@ app.use('/api/school/:schoolId/classes', classRoutes);
 app.use('/api/school/:schoolId/subjects', subjectRoutes);
 app.use('/api/school/:schoolId/attendance', attendanceRoutes);
 app.use('/api/school/:schoolId/leave', leaveRoutes);
+app.use('/api/school/:schoolId/parent-portal', parentPortalRoutes);
+app.use('/api/school/:schoolId/announcements', announcementRoutes);
+app.use('/api/school/:schoolId/notifications', notificationRoutes);
+app.use('/api/school/:schoolId/email-templates', emailTemplateRoutes);
+app.use('/api/test', testEmailRoutes);
 app.use('/api/school/upload', uploadRoutes);
 
 // Health check endpoint

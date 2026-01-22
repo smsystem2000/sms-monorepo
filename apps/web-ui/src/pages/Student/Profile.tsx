@@ -22,28 +22,25 @@ import {
     Class as ClassIcon,
     Edit as EditIcon,
 } from '@mui/icons-material';
-import TokenService from '../../queries/token/tokenService';
 import RequestChangeDialog from '../../components/Dialogs/RequestChangeDialog';
-import { useGetStudentById } from '../../queries/Student';
+import { useUserStore } from '../../stores/userStore';
 
 const StudentProfile = () => {
     const [requestDialogOpen, setRequestDialogOpen] = useState(false);
     const [requestFieldType, setRequestFieldType] = useState<"email_change" | "phone_change" | "general">("general");
     const [currentFieldValue, setCurrentFieldValue] = useState("");
 
-    // Get IDs from token for API calls
-    const decodedToken = TokenService.decodeToken();
-    const schoolId = decodedToken?.schoolId || '';
-    const studentId = decodedToken?.userId || decodedToken?.studentId || '';
+    // Get user and school data from Zustand store
+    const { user: student, school, isLoading: studentLoading, error: studentError } = useUserStore();
 
-    // Fetch full student details from API (includes aggregated schoolName, className, sectionName, parentName)
-    const { data: studentData, isLoading: studentLoading, error: studentError } = useGetStudentById(schoolId, studentId);
-    const student = studentData?.data;
+    // Derivations for legacy compatibility and clear naming
+    const schoolId = school?.schoolId || '';
+    const studentId = student?.userId || '';
 
-    // Use aggregated data directly from API response
-    const schoolName = student?.schoolName || schoolId;
+    // Use aggregated data directly from store (already populated by fetchProfile)
+    const schoolName = student?.schoolName || school?.schoolName || schoolId;
 
-    // Use className and sectionName directly from student API response (already resolved by backend)
+    // Use className and sectionName directly from student data in store
     const className = student?.className || student?.class || '';
     const sectionName = student?.sectionName || student?.section || '';
 
@@ -51,12 +48,12 @@ const StudentProfile = () => {
         ? `${className} - ${sectionName}`
         : className || '-';
 
-    // User details from API
+    // User details from store
     const userName = student?.firstName
         ? `${student.firstName} ${student.lastName || ''}`.trim()
-        : decodedToken?.email?.split('@')[0] || 'User';
+        : student?.email?.split('@')[0] || 'User';
     const userEmail = student?.email || '';
-    const userPhone = student?.phone || student?.phoneNumber || '';
+    const userPhone = student?.phone || '';
 
     const openRequestDialog = (type: "email_change" | "phone_change" | "general", currentValue: string = "") => {
         setRequestFieldType(type);

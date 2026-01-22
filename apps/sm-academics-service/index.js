@@ -5,6 +5,7 @@ require('dotenv').config();
 const { connectDB, ensureDbConnection } = require('./configs/db');
 const timetableRoutes = require('./routes/timetable.routes');
 const examRoutes = require('./routes/exam.routes');
+const homeworkRoutes = require('./routes/homework.routes');
 
 const app = express();
 
@@ -36,9 +37,10 @@ app.use(express.urlencoded({ extended: true }));
 // MongoDB auto-reconnection middleware - ensures DB is connected before processing requests
 app.use(ensureDbConnection);
 
-// Timetable routes (school-specific)
+// Routes (school-specific)
 app.use('/api/academics/school/:schoolId', timetableRoutes);
 app.use('/api/academics/school/:schoolId', examRoutes);
+app.use('/api/academics/school/:schoolId/homework', homeworkRoutes);
 
 // Health check endpoint
 app.get('/health', (_req, res) => {

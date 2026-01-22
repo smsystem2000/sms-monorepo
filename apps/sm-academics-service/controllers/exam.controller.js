@@ -104,7 +104,7 @@ const scheduleExamSubject = async (req, res) => {
         const scheduleData = req.body; // examId, classId, subjectId, date, startTime, endTime, invigilators...
 
         const schoolDbName = await getSchoolDbName(schoolId);
-        const { ExamSchedule, TimetableConfig, TimetableEntry } = getModels(schoolDbName);
+        const { ExamSchedule, TimetableConfig, TimetableEntry, TimetableSchedule } = getModels(schoolDbName);
 
         // 1. Check for Room Conflicts
         if (scheduleData.roomId) {
@@ -145,29 +145,47 @@ const scheduleExamSubject = async (req, res) => {
             const dateObj = new Date(scheduleData.date);
             const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
 
-            // A. Check against Regular Timetable
+            // A. Check if timetable is temporarily disabled
             const config = await TimetableConfig.findOne({ schoolId, isActive: true });
 
-            // Find periods that overlap with exam time
-            const conflictingPeriods = config?.periods
-                .filter(p => isTimeOverlap(p.startTime, p.endTime, scheduleData.startTime, scheduleData.endTime))
-                .map(p => p.periodNumber) || [];
-
-            if (conflictingPeriods.length > 0) {
-                const timetableConflict = await TimetableEntry.findOne({
-                    schoolId,
-                    teacherId: { $in: scheduleData.invigilators },
-                    dayOfWeek,
-                    periodNumber: { $in: conflictingPeriods },
-                    isActive: true
-                });
-
-                if (timetableConflict) {
-                    return res.status(409).json({
-                        success: false,
-                        message: `Invigilator has a regular class during this time (Period ${timetableConflict.periodNumber})`
-                    });
+            // Check if timetable is temporarily disabled
+            let isTimetableDisabled = false;
+            if (config?.temporarilyDisabled) {
+                // Check if current date falls within disabled period (if dates are set)
+                if (config.disabledFrom && config.disabledTo) {
+                    isTimetableDisabled = dateObj >= new Date(config.disabledFrom) && dateObj <= new Date(config.disabledTo);
+                } else {
+                    // No date range specified, timetable is fully disabled
+                    isTimetableDisabled = true;
                 }
+            }
+
+            // Only check regular timetable conflicts if timetable is NOT disabled
+            if (!isTimetableDisabled && config) {
+                // Find periods that overlap with exam time
+                const conflictingPeriods = config.periods
+                    .filter(p => isTimeOverlap(p.startTime, p.endTime, scheduleData.startTime, scheduleData.endTime))
+                    .map(p => p.periodNumber) || [];
+
+                if (conflictingPeriods.length > 0) {
+                    const timetableConflict = await TimetableEntry.findOne({
+                        schoolId,
+                        teacherId: { $in: scheduleData.invigilators },
+                        dayOfWeek,
+                        periodNumber: { $in: conflictingPeriods },
+                        isActive: true
+                    });
+
+                    if (timetableConflict) {
+                        return res.status(409).json({
+                            success: false,
+                            message: `Invigilator has a regular class during this time (Period ${timetableConflict.periodNumber})`
+                        });
+                    }
+                }
+            } else if (isTimetableDisabled) {
+                // Timetable is temporarily disabled - skip conflict check
+                console.log(`Timetable temporarily disabled, skipping class conflict check`);
             }
 
             // B. Check against Other Exams

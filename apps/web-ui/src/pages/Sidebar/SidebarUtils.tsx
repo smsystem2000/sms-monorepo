@@ -267,6 +267,18 @@ export const SchoolAdminMenuItems: SideBarMenuItemType[] = [
     path: "/school-admin/profile",
     isExpandable: false,
   },
+  {
+    name: "Announcements",
+    icon: <MuiIcons.Announcement />,
+    path: "/school-admin/announcements",
+    isExpandable: false,
+  },
+  {
+    name: "Email Templates",
+    icon: <MuiIcons.MailOutline />,
+    path: "/school-admin/email-templates",
+    isExpandable: false,
+  },
 ];
 
 // Teachers Menu Items
@@ -353,6 +365,18 @@ export const TeachersMenuItems: SideBarMenuItemType[] = [
     path: "/teacher/profile",
     isExpandable: false,
   },
+  {
+    name: "Announcements",
+    icon: <MuiIcons.Announcement />,
+    path: "/teacher/announcements",
+    isExpandable: false,
+  },
+  {
+    name: "Homework",
+    icon: <MuiIcons.Assignment />,
+    path: "/teacher/homework",
+    isExpandable: false,
+  },
 ];
 
 // Students Menu Items
@@ -422,6 +446,18 @@ export const StudentsMenuItems: SideBarMenuItemType[] = [
     path: "/student/profile",
     isExpandable: false,
   },
+  {
+    name: "Announcements",
+    icon: <MuiIcons.Announcement />,
+    path: "/student/announcements",
+    isExpandable: false,
+  },
+  {
+    name: "Homework",
+    icon: <MuiIcons.Assignment />,
+    path: "/student/homework",
+    isExpandable: false,
+  },
 ];
 
 // Parent Menu Items
@@ -432,4 +468,69 @@ export const ParentMenuItems: SideBarMenuItemType[] = [
     path: "/parent/dashboard",
     isExpandable: false,
   },
+  {
+    name: "Attendance",
+    icon: <MuiIcons.CheckCircle />,
+    path: "/parent/attendance",
+    isExpandable: false,
+  },
+  {
+    name: "Announcements",
+    icon: <MuiIcons.Announcement />,
+    path: "/parent/announcements",
+    isExpandable: false,
+  },
+  {
+    name: "Homework",
+    icon: <MuiIcons.Assignment />,
+    path: "/parent/homework",
+    isExpandable: false,
+  },
+  {
+    name: "Leave",
+    icon: <MuiIcons.EventNote />,
+    isExpandable: true,
+    subItems: [
+      {
+        name: "Apply Leave",
+        icon: <MuiIcons.AddCircle />,
+        path: "/parent/leave/apply",
+      },
+      {
+        name: "Leave History",
+        icon: <MuiIcons.EventNote />,
+        path: "/parent/leave/history",
+      },
+    ],
+  },
+  {
+    name: "Exam",
+    icon: <MuiIcons.Assessment />,
+    isExpandable: true,
+    subItems: [
+      {
+        name: "Schedule",
+        icon: <MuiIcons.Event />,
+        path: "/parent/exam/schedule",
+      },
+      {
+        name: "Results",
+        icon: <MuiIcons.Assessment />,
+        path: "/parent/exam/results",
+      },
+    ],
+  },
+  {
+    name: "Notifications",
+    icon: <MuiIcons.Notifications />,
+    path: "/parent/notifications",
+    isExpandable: false,
+  },
+  {
+    name: "Profile",
+    icon: <MuiIcons.AccountCircle />,
+    path: "/parent/profile",
+    isExpandable: false,
+  },
+];
 ];

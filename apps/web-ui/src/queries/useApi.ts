@@ -37,7 +37,7 @@ const detectServiceFromPath = (path: string): ServiceType => {
     if (path.startsWith("/api/auth")) {
         return "auth";
     }
-    // Check for academics paths (timetable, etc.)
+    // Check for academics paths (timetable, homework, etc.)
     if (path.startsWith("/api/academics")) {
         return "academics";
     }

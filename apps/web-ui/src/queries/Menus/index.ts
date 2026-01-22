@@ -5,9 +5,36 @@ import type { ApiResponse, Menu, CreateMenuPayload } from "../../types";
 // Get menus based on role
 export const useGetSuperAdminMenus = (role: string) => {
   return useQuery({
-    queryKey: ["menus", role],
-    queryFn: () => useApi<any>("GET", `/api/admin/dashboard/menus/${role}`),
+    queryKey: ["menus", "superadmin", role],
+    queryFn: () =>
+      useApi<ApiResponse<Menu[]>>("GET", `/api/admin/dashboard/menus/${role}`),
     enabled: !!role,
+  });
+};
+
+// Get menus for school admin/staff based on schoolId and role
+export const useGetSchoolAdminMenus = (schoolId: string, role: string) => {
+  return useQuery({
+    queryKey: ["menus", schoolId, role],
+    queryFn: () =>
+      useApi<ApiResponse<Menu[]>>(
+        "GET",
+        `/api/auth/${schoolId}/dashboard/menus/${role}`,
+      ),
+    enabled: !!schoolId && !!role,
+  });
+};
+
+// Get menus for student/teacher/parent based on schoolId and role
+export const useGetUserMenus = (schoolId: string, role: string) => {
+  return useQuery({
+    queryKey: ["menus", "user", schoolId, role],
+    queryFn: () =>
+      useApi<ApiResponse<Menu[]>>(
+        "GET",
+        `/api/school/${schoolId}/dashboard/menus/${role}`,
+      ),
+    enabled: !!schoolId && !!role,
   });
 };
 
@@ -48,7 +75,7 @@ export const useUpdateMenu = () => {
       useApi<ApiResponse<Menu>>(
         "PUT",
         `/api/admin/dashboard/menus/${menuId}`,
-        data
+        data,
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["menus"] });
@@ -64,7 +91,7 @@ export const useDeleteMenu = () => {
     mutationFn: (menuId: string) =>
       useApi<ApiResponse<void>>(
         "DELETE",
-        `/api/admin/dashboard/menus/${menuId}`
+        `/api/admin/dashboard/menus/${menuId}`,
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["menus"] });

@@ -43,6 +43,6 @@ router.delete(
 );
 
 
-router.get("/menus/:role", getMenus);
+
 
 module.exports = router;

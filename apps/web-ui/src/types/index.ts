@@ -715,7 +715,7 @@ export interface Menu {
   menuAccessRoles: string | string[];
   menuType: "main" | "sub";
   hasSubmenu: boolean;
-  parentId?: string;
+  parentMenuId?: string;
   submenus?: Menu[];
   status: "active" | "inactive";
   createdAt?: string;
@@ -730,7 +730,7 @@ export interface CreateMenuPayload {
   menuAccessRoles: string | string[];
   menuType: string;
   hasSubmenu: boolean;
-  parentId?: string;
+  parentMenuId?: string;
   menuOrder: number;
   status: "active" | "inactive";
 }
@@ -742,7 +742,7 @@ export interface UpdateMenuPayload {
   menuAccessRoles?: string;
   menuType?: string;
   hasSubmenu?: boolean;
-  parentId?: string;
+  parentMenuId?: string;
 }
 
 // ==========================================

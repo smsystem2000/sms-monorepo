@@ -16,7 +16,7 @@ const menuSchema = new mongoose.Schema(
       required: true,
     },
     menuOrder: {
-      type: Number,
+      type: String,
       required: true,
     },
     menuType: {
@@ -48,7 +48,7 @@ const menuSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 module.exports = mongoose.model("Menu", menuSchema);

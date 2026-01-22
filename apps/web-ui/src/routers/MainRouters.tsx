@@ -23,7 +23,12 @@ import SchoolAdminSubjects from "../pages/SchoolAdmin/Subjects";
 import SchoolAdminAttendance from "../pages/SchoolAdmin/Attendance";
 import SchoolAdminLeaveRequests from "../pages/SchoolAdmin/Leave/Requests";
 import SchoolLocation from "../pages/SchoolAdmin/SchoolLocation";
-import { TimetableConfig, TimetableMaster, ConflictManagement, SubstituteManagement } from "../pages/SchoolAdmin/Timetable";
+import {
+  TimetableConfig,
+  TimetableMaster,
+  ConflictManagement,
+  SubstituteManagement,
+} from "../pages/SchoolAdmin/Timetable";
 import SchoolAdminAnnouncements from "../pages/SchoolAdmin/Announcements";
 import EmailTemplateList from "../pages/SchoolAdmin/EmailTemplates";
 import EmailTemplateEditor from "../pages/SchoolAdmin/EmailTemplates/Editor";
@@ -95,7 +100,10 @@ const MainRouters = () => {
 
       {/* Super Admin Routes */}
       <Route element={<ProtectedRoute allowedRoles={["super_admin"]} />}>
-        <Route path="/super-admin/dashboard" element={<SuperAdminDashboard />} />
+        <Route
+          path="/super-admin/dashboard"
+          element={<SuperAdminDashboard />}
+        />
         <Route path="/super-admin/schools" element={<Schools />} />
         <Route path="/super-admin/users" element={<Users />} />
         <Route path="/super-admin/menus" element={<Menus />} />
@@ -103,20 +111,47 @@ const MainRouters = () => {
 
       {/* School Admin Routes */}
       <Route element={<ProtectedRoute allowedRoles={["sch_admin"]} />}>
-        <Route path="/school-admin/dashboard" element={<SchoolAdminDashboard />} />
+        <Route
+          path="/school-admin/dashboard"
+          element={<SchoolAdminDashboard />}
+        />
         <Route path="/school-admin/school" element={<School />} />
         <Route path="/school-admin/classes" element={<SchoolAdminClasses />} />
-        <Route path="/school-admin/subjects" element={<SchoolAdminSubjects />} />
+        <Route
+          path="/school-admin/subjects"
+          element={<SchoolAdminSubjects />}
+        />
         <Route path="/school-admin/teachers" element={<Teachers />} />
-        <Route path="/school-admin/students" element={<SchoolAdminStudents />} />
+        <Route
+          path="/school-admin/students"
+          element={<SchoolAdminStudents />}
+        />
         <Route path="/school-admin/parents" element={<Parents />} />
         <Route path="/school-admin/requests" element={<Requests />} />
-        <Route path="/school-admin/attendance" element={<SchoolAdminAttendance />} />
-        <Route path="/school-admin/leave" element={<SchoolAdminLeaveRequests />} />
-        <Route path="/school-admin/timetable/config" element={<TimetableConfig />} />
-        <Route path="/school-admin/timetable/master" element={<TimetableMaster />} />
-        <Route path="/school-admin/timetable/conflicts" element={<ConflictManagement />} />
-        <Route path="/school-admin/timetable/substitutes" element={<SubstituteManagement />} />
+        <Route
+          path="/school-admin/attendance"
+          element={<SchoolAdminAttendance />}
+        />
+        <Route
+          path="/school-admin/leaverequest"
+          element={<SchoolAdminLeaveRequests />}
+        />
+        <Route
+          path="/school-admin/timetable/config"
+          element={<TimetableConfig />}
+        />
+        <Route
+          path="/school-admin/timetable/master"
+          element={<TimetableMaster />}
+        />
+        <Route
+          path="/school-admin/timetable/conflicts"
+          element={<ConflictManagement />}
+        />
+        <Route
+          path="/school-admin/timetable/substitutes"
+          element={<SubstituteManagement />}
+        />
 
         {/* Exam Management Routes (Admin) */}
         <Route path="/school-admin/exam/config" element={<ExamConfiguration />} />
@@ -168,7 +203,10 @@ const MainRouters = () => {
         <Route path="/student/dashboard" element={<StudentDashboard />} />
         <Route path="/student/classes" element={<StudentClasses />} />
         <Route path="/student/attendance" element={<StudentAttendance />} />
-        <Route path="/student/attendance/history" element={<StudentAttendanceHistory />} />
+        <Route
+          path="/student/attendance/history"
+          element={<StudentAttendanceHistory />}
+        />
         <Route path="/student/results" element={<StudentResults />} />
         <Route path="/student/my-requests" element={<StudentMyRequests />} />
         <Route path="/student/leave/apply" element={<StudentApplyLeave />} />
@@ -202,6 +240,6 @@ const MainRouters = () => {
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
-}
+};
 
 export default MainRouters;

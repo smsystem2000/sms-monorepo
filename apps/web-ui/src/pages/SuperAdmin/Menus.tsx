@@ -58,6 +58,24 @@ const Menus = () => {
   const columns: Column<Menu>[] = [
     { id: "menuName", label: "Menu Name", minWidth: 150 },
     { id: "menuUrl", label: "Path", minWidth: 150 },
+    {
+      id: "menuType",
+      label: "Menu Type",
+      minWidth: 120,
+      format: (value: any) => (
+        <Chip
+          label={value === "main" ? "Main Menu" : "Sub Menu"}
+          size="small"
+          color={value === "main" ? "primary" : "secondary"}
+          variant="outlined"
+          sx={{
+            fontWeight: 600,
+            textTransform: "capitalize",
+            minWidth: "90px",
+          }}
+        />
+      ),
+    },
 
     {
       id: "menuAccessRoles",

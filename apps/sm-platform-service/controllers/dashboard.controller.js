@@ -67,7 +67,7 @@ const getMenus = async (req, res) => {
       {
         menuAccessRoles: { $in: accessTokens },
       },
-      { menuAccessRoles: 0 }
+      { menuAccessRoles: 0 },
     ).sort({ menuOrder: 1 });
 
     return res.status(200).json({
@@ -122,6 +122,30 @@ const createMenu = async (req, res) => {
       });
     }
 
+    const effectiveParentMenuId = parentMenuId || req.body.parentId || null;
+
+    if (menuType === "sub" && !effectiveParentMenuId) {
+      return res.status(400).json({
+        success: false,
+        message: "parentMenuId is required for submenus",
+      });
+    }
+
+    const existingMenu = await Menu.findOne({
+      menuName,
+      schoolId: schoolId || null,
+      parentMenuId: effectiveParentMenuId,
+    });
+
+    if (existingMenu) {
+      return res.status(400).json({
+        success: false,
+        message: `Menu with name "${menuName}" already exists for this ${
+          effectiveParentMenuId ? "parent menu" : "school"
+        }`,
+      });
+    }
+
     const menuId = await generateMenuId();
 
     const newMenu = new Menu({
@@ -131,7 +155,7 @@ const createMenu = async (req, res) => {
       menuOrder,
       menuType,
 
-      parentMenuId: parentMenuId || null,
+      parentMenuId: effectiveParentMenuId,
       menuAccessRoles: roles,
       menuIcon: menuIcon || null,
       schoolId: schoolId || null,
@@ -181,6 +205,72 @@ const updateMenu = async (req, res) => {
         success: false,
         message: "menuAccessRoles must be a non-empty array when provided",
       });
+    }
+
+    const effectiveParentMenuId =
+      updateData.parentMenuId !== undefined
+        ? updateData.parentMenuId
+        : updateData.parentId !== undefined
+          ? updateData.parentId
+          : undefined;
+
+    // Check for duplicate menu name in the same school and parent during update
+    if (
+      updateData.menuName ||
+      updateData.schoolId !== undefined ||
+      effectiveParentMenuId !== undefined ||
+      updateData.menuType !== undefined
+    ) {
+      const currentMenu = await Menu.findOne({ menuId });
+      if (!currentMenu) {
+        return res.status(404).json({
+          success: false,
+          message: "Menu not found",
+        });
+      }
+
+      const checkName = updateData.menuName || currentMenu.menuName;
+      const checkSchoolId =
+        updateData.schoolId !== undefined
+          ? updateData.schoolId
+          : currentMenu.schoolId;
+      const checkParentMenuId =
+        effectiveParentMenuId !== undefined
+          ? effectiveParentMenuId
+          : currentMenu.parentMenuId;
+      const checkMenuType = updateData.menuType || currentMenu.menuType;
+
+      if (checkMenuType === "sub" && !checkParentMenuId) {
+        return res.status(400).json({
+          success: false,
+          message: "parentMenuId is required for submenus",
+        });
+      }
+
+      const existingMenu = await Menu.findOne({
+        menuName: checkName,
+        schoolId: checkSchoolId || null,
+        parentMenuId: checkParentMenuId || null,
+        menuId: { $ne: menuId },
+      });
+
+      if (existingMenu) {
+        return res.status(400).json({
+          success: false,
+          message: `Menu with name "${checkName}" already exists for this ${
+            checkParentMenuId ? "parent menu" : "school"
+          }`,
+        });
+      }
+    }
+
+    // Ensure we save it as parentMenuId in the DB
+    if (
+      updateData.parentId !== undefined &&
+      updateData.parentMenuId === undefined
+    ) {
+      updateData.parentMenuId = updateData.parentId;
+      delete updateData.parentId;
     }
 
     const updatedMenu = await Menu.findOneAndUpdate({ menuId }, updateData, {

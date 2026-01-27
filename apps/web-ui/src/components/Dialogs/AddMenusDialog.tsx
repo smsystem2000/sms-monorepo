@@ -25,6 +25,7 @@ import {
   Box,
   OutlinedInput,
   InputAdornment,
+  Autocomplete,
 } from "@mui/material";
 import { Close as CloseIcon, Apps as AppsIcon } from "@mui/icons-material";
 import { useCreateMenu, useGetMenus, useUpdateMenu } from "../../queries/Menus";
@@ -306,24 +307,38 @@ const AddMenusDialog: React.FC<AddMenusDialogProps> = ({
               {/* Main Menu Heading (Parent ID) - Conditional */}
               {menuType === "sub" && (
                 <Grid size={{ xs: 12 }}>
-                  <FormControl fullWidth error={!!errors.parentMenuId}>
-                    <InputLabel>Main Menu Heading</InputLabel>
-                    <Select
-                      name="parentMenuId"
-                      value={formData.parentMenuId}
-                      onChange={(e) => handleChange(e as any)}
-                      label="Main Menu Heading"
-                    >
-                      {parentMenuOptions.map((menu: any) => (
-                        <MenuItem key={menu.menuId} value={menu.menuId}>
-                          {menu.menuName}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    {errors.parentMenuId && (
-                      <FormHelperText>{errors.parentMenuId}</FormHelperText>
+                  <Autocomplete
+                    options={parentMenuOptions}
+                    getOptionLabel={(option: any) => option.menuName || ""}
+                    value={
+                      parentMenuOptions.find(
+                        (m: any) => m.menuId === formData.parentMenuId,
+                      ) || null
+                    }
+                    onChange={(_event, newValue) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        parentMenuId: newValue ? newValue.menuId : "",
+                      }));
+                      if (errors.parentMenuId) {
+                        setErrors((prev) => ({ ...prev, parentMenuId: "" }));
+                      }
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Main Menu Heading"
+                        error={!!errors.parentMenuId}
+                        helperText={errors.parentMenuId}
+                        placeholder="Search for a menu..."
+                        required
+                      />
                     )}
-                  </FormControl>
+                    isOptionEqualToValue={(option, value) =>
+                      option.menuId === value.menuId
+                    }
+                    fullWidth
+                  />
                 </Grid>
               )}
 

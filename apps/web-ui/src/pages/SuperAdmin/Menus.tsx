@@ -1,10 +1,24 @@
-import { useState } from "react";
-import { Box, Chip, IconButton, Tooltip } from "@mui/material";
-import { Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material";
+import { useState, useMemo } from "react";
+import {
+  Box,
+  Chip,
+  IconButton,
+  Tooltip,
+  TextField,
+  Autocomplete,
+  Grid,
+  InputAdornment,
+} from "@mui/material";
+import {
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Search as SearchIcon,
+} from "@mui/icons-material";
 import DataTable, { type Column } from "../../components/Table/DataTable";
 import AddMenusDialog from "../../components/Dialogs/AddMenusDialog";
 import ConfirmationDialog from "../../components/Dialogs/ConfirmationDialog";
 import { useGetMenus, useDeleteMenu } from "../../queries/Menus";
+import { useGetSchools } from "../../queries/School";
 import type { Menu } from "../../types";
 
 const Menus = () => {
@@ -13,9 +27,45 @@ const Menus = () => {
   const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
   const [menuToDelete, setMenuToDelete] = useState<Menu | null>(null);
 
-  // Fetch menus
-  const { data: menusData, isLoading, error } = useGetMenus();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
+
+  // Fetch menus and schools
+  const { data: menusData, isLoading: isLoadingMenus, error } = useGetMenus();
+  const { data: schoolsData, isLoading: isLoadingSchools } = useGetSchools();
+
   const menus = menusData?.data || [];
+  const schools = schoolsData?.data || [];
+
+  // Filter menus based on search term and selected school
+  const filteredMenus = useMemo(() => {
+    return menus.filter((menu) => {
+      // School filter
+      if (selectedSchool && menu.schoolId !== selectedSchool) {
+        return false;
+      }
+
+      // Search filter (menuName, roles)
+      const term = searchTerm.trim().toLowerCase();
+      if (term) {
+        const nameMatch = menu.menuName.toLowerCase().includes(term);
+        const roles = Array.isArray(menu.menuAccessRoles)
+          ? menu.menuAccessRoles
+          : [menu.menuAccessRoles];
+        const roleMatch = roles.some(
+          (role: string) => role && role.toLowerCase().includes(term),
+        );
+
+        if (!nameMatch && !roleMatch) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [menus, searchTerm, selectedSchool]);
+
+  const isLoading = isLoadingMenus || isLoadingSchools;
 
   const handleAddClick = () => {
     setIsAddDialogOpen(true);
@@ -173,10 +223,63 @@ const Menus = () => {
 
   return (
     <Box>
+      {/* Filters Section */}
+      <Box
+        sx={{
+          mb: 3,
+          p: 2,
+          bgcolor: "background.paper",
+          borderRadius: 2,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+        }}
+      >
+        <Grid container spacing={2} alignItems="center">
+          <Grid size={{ xs: 12, md: 6 }}>
+            <TextField
+              fullWidth
+              variant="outlined"
+              placeholder="Search menus or roles..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon color="action" />
+                  </InputAdornment>
+                ),
+              }}
+              size="small"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Autocomplete
+              options={schools}
+              getOptionLabel={(school: any) => school.schoolName || ""}
+              value={
+                schools.find((s: any) => s.schoolId === selectedSchool) || null
+              }
+              onChange={(_event, newValue) => {
+                setSelectedSchool(newValue ? newValue.schoolId : null);
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Filter by School"
+                  variant="outlined"
+                  size="small"
+                  placeholder="Select a school"
+                />
+              )}
+              fullWidth
+            />
+          </Grid>
+        </Grid>
+      </Box>
+
       <DataTable<Menu>
         title="Menus Management"
         columns={columns}
-        data={menus}
+        data={filteredMenus}
         isLoading={isLoading}
         error={error ? (error as any).message : null}
         onAddClick={handleAddClick}

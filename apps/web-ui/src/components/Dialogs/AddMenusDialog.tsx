@@ -124,7 +124,13 @@ const AddMenusDialog: React.FC<AddMenusDialogProps> = ({
         formData.menuAccessRoles.length === 0)
     )
       newErrors.menuAccessRoles = "Role is required";
-    if (!formData.schoolId) newErrors.schoolId = "School is required";
+    // For admin roles (like super_admin), schoolId is not required
+    const isSuperAdmin = Array.isArray(formData.menuAccessRoles)
+      ? formData.menuAccessRoles.includes("super_admin")
+      : formData.menuAccessRoles === "super_admin";
+
+    if (!isSuperAdmin && !formData.schoolId)
+      newErrors.schoolId = "School is required";
 
     if (menuType === "sub" && !formData.parentMenuId?.trim()) {
       newErrors.parentMenuId = "Main Menu Heading is required";

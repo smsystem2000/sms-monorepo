@@ -158,7 +158,8 @@ const createMenu = async (req, res) => {
       parentMenuId: effectiveParentMenuId,
       menuAccessRoles: roles,
       menuIcon: menuIcon || null,
-      schoolId: schoolId || null,
+      schoolId:
+        roles.includes("super_admin") && !schoolId ? undefined : schoolId,
       status: status || "active",
     });
 
@@ -271,6 +272,15 @@ const updateMenu = async (req, res) => {
     ) {
       updateData.parentMenuId = updateData.parentId;
       delete updateData.parentId;
+    }
+
+    // Handle schoolId for super_admin roles
+    if (
+      updateData.menuAccessRoles &&
+      updateData.menuAccessRoles.includes("super_admin") &&
+      !updateData.schoolId
+    ) {
+      updateData.schoolId = undefined;
     }
 
     const updatedMenu = await Menu.findOneAndUpdate({ menuId }, updateData, {

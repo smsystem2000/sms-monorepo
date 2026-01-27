@@ -38,7 +38,12 @@ const menuSchema = new mongoose.Schema(
     },
     schoolId: {
       type: String,
-      required: true,
+      required: function () {
+        return !(
+          this.menuAccessRoles && this.menuAccessRoles.includes("super_admin")
+        );
+      },
+      default: null,
     },
     status: {
       type: String,

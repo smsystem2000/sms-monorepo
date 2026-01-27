@@ -2,20 +2,20 @@ import "./sidebar.scss";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import {
-  SuperAdminMenuItems,
-  SchoolAdminMenuItems,
-  TeachersMenuItems,
-  StudentsMenuItems,
-  ParentMenuItems,
-  transformMenuData,
-} from "./SidebarUtils";
+import { transformMenuData } from "./SidebarUtils";
 import {
   useGetSuperAdminMenus,
   useGetSchoolAdminMenus,
   useGetUserMenus,
 } from "../../queries/Menus";
-import { Avatar, Toolbar, Typography, Divider } from "@mui/material";
+import {
+  Avatar,
+  Toolbar,
+  Typography,
+  Divider,
+  CircularProgress,
+  Box,
+} from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
@@ -87,18 +87,18 @@ const Sidebar = ({ isOpen, onClose, role, onLogout }: SidebarProps) => {
   const schoolId = TokenService.getSchoolId();
 
   // Get dynamic menus for super admin
-  const { data: superAdminMenus } = useGetSuperAdminMenus(
-    role === "super_admin" ? role : "",
-  );
+  const { data: superAdminMenus, isLoading: isLoadingSuperAdmin } =
+    useGetSuperAdminMenus(role === "super_admin" ? role : "");
 
   // Get dynamic menus for school admin
-  const { data: schoolAdminMenus } = useGetSchoolAdminMenus(
-    role === "sch_admin" ? schoolId || "" : "",
-    role === "sch_admin" ? role : "",
-  );
+  const { data: schoolAdminMenus, isLoading: isLoadingSchoolAdmin } =
+    useGetSchoolAdminMenus(
+      role === "sch_admin" ? schoolId || "" : "",
+      role === "sch_admin" ? role : "",
+    );
 
   // Get dynamic menus for student/teacher/parent
-  const { data: userMenus } = useGetUserMenus(
+  const { data: userMenus, isLoading: isLoadingUserMenus } = useGetUserMenus(
     role === "teacher" || role === "student" || role === "parent"
       ? schoolId || ""
       : "",
@@ -107,56 +107,22 @@ const Sidebar = ({ isOpen, onClose, role, onLogout }: SidebarProps) => {
       : "",
   );
 
+  const isLoading =
+    isLoadingSuperAdmin || isLoadingSchoolAdmin || isLoadingUserMenus;
+
   // Updated menu items logic based on role
   const getMenuItems = () => {
     switch (role) {
       case "super_admin":
-        if (
-          superAdminMenus?.data &&
-          Array.isArray(superAdminMenus.data) &&
-          superAdminMenus.data.length > 0
-        ) {
-          return transformMenuData(superAdminMenus.data, role);
-        }
-        return SuperAdminMenuItems;
+        return transformMenuData(superAdminMenus?.data || [], role);
       case "sch_admin":
-        if (
-          schoolAdminMenus?.data &&
-          Array.isArray(schoolAdminMenus.data) &&
-          schoolAdminMenus.data.length > 0
-        ) {
-          return transformMenuData(schoolAdminMenus.data, role);
-        }
-        return SchoolAdminMenuItems;
+        return transformMenuData(schoolAdminMenus?.data || [], role);
       case "teacher":
-        if (
-          userMenus?.data &&
-          Array.isArray(userMenus.data) &&
-          userMenus.data.length > 0
-        ) {
-          return transformMenuData(userMenus.data, role);
-        }
-        return TeachersMenuItems;
       case "student":
-        if (
-          userMenus?.data &&
-          Array.isArray(userMenus.data) &&
-          userMenus.data.length > 0
-        ) {
-          return transformMenuData(userMenus.data, role);
-        }
-        return StudentsMenuItems;
       case "parent":
-        if (
-          userMenus?.data &&
-          Array.isArray(userMenus.data) &&
-          userMenus.data.length > 0
-        ) {
-          return transformMenuData(userMenus.data, role);
-        }
-        return ParentMenuItems;
+        return transformMenuData(userMenus?.data || [], role);
       default:
-        return SuperAdminMenuItems;
+        return [];
     }
   };
 
@@ -271,177 +237,203 @@ const Sidebar = ({ isOpen, onClose, role, onLogout }: SidebarProps) => {
               paddingBottom: "80px",
             }}
           >
-            {menuItems.map((item: SideBarMenuItemType) => {
-              const isHovered = hoveredItem === item.name;
-              const isSelected = isMenuItemSelected(item);
-              const backgroundColor = isSelected
-                ? "#3b82f6"
-                : isHovered
-                  ? "rgba(59, 130, 246, 0.2)"
-                  : "transparent";
+            {isLoading ? (
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  py: 4,
+                  gap: 2,
+                }}
+              >
+                <CircularProgress size={24} sx={{ color: "#3b82f6" }} />
+                <Typography variant="caption" sx={{ color: "#94a3b8" }}>
+                  Loading menus...
+                </Typography>
+              </Box>
+            ) : menuItems.length === 0 ? (
+              <Box sx={{ p: 2, textAlign: "center" }}>
+                <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+                  No menus assigned.
+                </Typography>
+              </Box>
+            ) : (
+              menuItems.map((item: SideBarMenuItemType) => {
+                const isHovered = hoveredItem === item.name;
+                const isSelected = isMenuItemSelected(item);
+                const backgroundColor = isSelected
+                  ? "#3b82f6"
+                  : isHovered
+                    ? "rgba(59, 130, 246, 0.2)"
+                    : "transparent";
 
-              return (
-                <div key={item.name}>
-                  <div
-                    onClick={() => {
-                      if (item.isExpandable) {
-                        handleToggle(item.name);
-                      } else {
-                        navigate(item.path!);
-                        handleSelect();
-                      }
-                    }}
-                    onMouseEnter={() => setHoveredItem(item.name)}
-                    onMouseLeave={() => setHoveredItem(null)}
-                    className={`menu-item ${isSelected ? "selected" : ""}`}
-                    style={{
-                      background: backgroundColor,
-                      borderRadius: "8px",
-                      marginBottom: "4px",
-                      border: isSelected
-                        ? "1px solid rgba(59, 130, 246, 0.3)"
-                        : "1px solid transparent",
-                      transition: "all 0.2s ease",
-                      padding: "12px 16px",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    <span
+                return (
+                  <div key={item.name}>
+                    <div
+                      onClick={() => {
+                        if (item.isExpandable) {
+                          handleToggle(item.name);
+                        } else {
+                          navigate(item.path!);
+                          handleSelect();
+                        }
+                      }}
+                      onMouseEnter={() => setHoveredItem(item.name)}
+                      onMouseLeave={() => setHoveredItem(null)}
+                      className={`menu-item ${isSelected ? "selected" : ""}`}
                       style={{
+                        background: backgroundColor,
+                        borderRadius: "8px",
+                        marginBottom: "4px",
+                        border: isSelected
+                          ? "1px solid rgba(59, 130, 246, 0.3)"
+                          : "1px solid transparent",
+                        transition: "all 0.2s ease",
+                        padding: "12px 16px",
+                        cursor: "pointer",
                         display: "flex",
                         alignItems: "center",
-                        gap: "12px",
-                        color: isSelected ? "white" : "#cbd5e1",
-                        fontWeight: isSelected ? "600" : "500",
-                        flex: 1,
+                        whiteSpace: "nowrap",
                       }}
                     >
-                      {item.icon}
-                      <span style={{ flex: 1 }}>{item.name}</span>
-                    </span>
-                    {item.isExpandable && (
                       <span
                         style={{
-                          marginLeft: "auto",
-                          color: "#94a3b8",
                           display: "flex",
                           alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggle(item.name);
+                          gap: "12px",
+                          color: isSelected ? "white" : "#cbd5e1",
+                          fontWeight: isSelected ? "600" : "500",
+                          flex: 1,
                         }}
                       >
-                        {expandedItem === item.name ? (
-                          <ExpandLess />
-                        ) : (
-                          <ExpandMore />
-                        )}
+                        {item.icon}
+                        <span style={{ flex: 1 }}>{item.name}</span>
                       </span>
-                    )}
-                  </div>
-                  {item.isExpandable && (
-                    <motion.div
-                      className="sub-items"
-                      initial={false}
-                      animate={{
-                        height:
-                          expandedItem === item.name ||
-                          closingItem === item.name
-                            ? "auto"
-                            : 0,
-                        opacity: expandedItem === item.name ? 1 : 0,
-                      }}
-                      transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-                      style={{
-                        background: "rgba(30, 41, 59, 0.5)",
-                        borderRadius: "8px",
-                        margin: "4px 0 4px 16px",
-                        overflow: "hidden",
-                        border: "1px solid #334155",
-                      }}
-                    >
-                      {(expandedItem === item.name ||
-                        closingItem === item.name) &&
-                        item.subItems?.map((subItem) => {
-                          const isSubItemActive =
-                            location.pathname === subItem.path;
-                          const isSubItemHovered =
-                            hoveredSubItem === `${item.name}-${subItem.name}`;
+                      {item.isExpandable && (
+                        <span
+                          style={{
+                            marginLeft: "auto",
+                            color: "#94a3b8",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggle(item.name);
+                          }}
+                        >
+                          {expandedItem === item.name ? (
+                            <ExpandLess />
+                          ) : (
+                            <ExpandMore />
+                          )}
+                        </span>
+                      )}
+                    </div>
+                    {item.isExpandable && (
+                      <motion.div
+                        className="sub-items"
+                        initial={false}
+                        animate={{
+                          height:
+                            expandedItem === item.name ||
+                            closingItem === item.name
+                              ? "auto"
+                              : 0,
+                          opacity: expandedItem === item.name ? 1 : 0,
+                        }}
+                        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                        style={{
+                          background: "rgba(30, 41, 59, 0.5)",
+                          borderRadius: "8px",
+                          margin: "4px 0 4px 16px",
+                          overflow: "hidden",
+                          border: "1px solid #334155",
+                        }}
+                      >
+                        {(expandedItem === item.name ||
+                          closingItem === item.name) &&
+                          item.subItems?.map((subItem) => {
+                            const isSubItemActive =
+                              location.pathname === subItem.path;
+                            const isSubItemHovered =
+                              hoveredSubItem === `${item.name}-${subItem.name}`;
 
-                          const subItemBackground = isSubItemActive
-                            ? "linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(96, 165, 250, 0.3) 100%)"
-                            : isSubItemHovered
-                              ? "rgba(59, 130, 246, 0.15)"
-                              : "transparent";
+                            const subItemBackground = isSubItemActive
+                              ? "linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(96, 165, 250, 0.3) 100%)"
+                              : isSubItemHovered
+                                ? "rgba(59, 130, 246, 0.15)"
+                                : "transparent";
 
-                          return (
-                            <div
-                              key={subItem.name}
-                              className={`sub-item ${
-                                isSubItemActive ? "selected" : ""
-                              }`}
-                              onClick={() => {
-                                if (subItem.path) {
-                                  navigate(subItem.path);
+                            return (
+                              <div
+                                key={subItem.name}
+                                className={`sub-item ${
+                                  isSubItemActive ? "selected" : ""
+                                }`}
+                                onClick={() => {
+                                  if (subItem.path) {
+                                    navigate(subItem.path);
+                                  }
+                                  handleSelect();
+                                }}
+                                onMouseEnter={() =>
+                                  setHoveredSubItem(
+                                    `${item.name}-${subItem.name}`,
+                                  )
                                 }
-                                handleSelect();
-                              }}
-                              onMouseEnter={() =>
-                                setHoveredSubItem(
-                                  `${item.name}-${subItem.name}`,
-                                )
-                              }
-                              onMouseLeave={() => setHoveredSubItem(null)}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "12px",
-                                padding: "10px 16px",
-                                color: isSubItemActive ? "white" : "#94a3b8",
-                                background: subItemBackground,
-                                borderRadius: "6px",
-                                margin: "2px 8px",
-                                textDecoration: "none",
-                                transition: "all 0.2s ease",
-                                cursor: "pointer",
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              <span
-                                className="sub-item-icon"
+                                onMouseLeave={() => setHoveredSubItem(null)}
                                 style={{
-                                  color: isSubItemActive ? "white" : "#94a3b8",
                                   display: "flex",
                                   alignItems: "center",
-                                  justifyContent: "center",
-                                  width: "20px",
+                                  gap: "12px",
+                                  padding: "10px 16px",
+                                  color: isSubItemActive ? "white" : "#94a3b8",
+                                  background: subItemBackground,
+                                  borderRadius: "6px",
+                                  margin: "2px 8px",
+                                  textDecoration: "none",
+                                  transition: "all 0.2s ease",
+                                  cursor: "pointer",
+                                  whiteSpace: "nowrap",
                                 }}
                               >
-                                {subItem.icon}
-                              </span>
-                              <span
-                                className="sub-item-name"
-                                style={{
-                                  fontWeight: isSubItemActive ? "600" : "500",
-                                  fontSize: "0.875rem",
-                                  flex: 1,
-                                }}
-                              >
-                                {subItem.name}
-                              </span>
-                            </div>
-                          );
-                        })}
-                    </motion.div>
-                  )}
-                </div>
-              );
-            })}
+                                <span
+                                  className="sub-item-icon"
+                                  style={{
+                                    color: isSubItemActive
+                                      ? "white"
+                                      : "#94a3b8",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    width: "20px",
+                                  }}
+                                >
+                                  {subItem.icon}
+                                </span>
+                                <span
+                                  className="sub-item-name"
+                                  style={{
+                                    fontWeight: isSubItemActive ? "600" : "500",
+                                    fontSize: "0.875rem",
+                                    flex: 1,
+                                  }}
+                                >
+                                  {subItem.name}
+                                </span>
+                              </div>
+                            );
+                          })}
+                      </motion.div>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
 
           {/* Logout Button at Bottom */}

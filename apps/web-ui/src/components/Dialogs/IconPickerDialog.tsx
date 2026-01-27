@@ -28,7 +28,7 @@ const IconPickerDialog: React.FC<IconPickerDialogProps> = ({
   onSelect,
   currentIcon,
 }) => {
-  const [searchTerm, setSearchTerm] = useState("school"); // Default search
+  const [searchTerm, setSearchTerm] = useState(""); // Default search is now blank
   const [icons, setIcons] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -39,8 +39,8 @@ const IconPickerDialog: React.FC<IconPickerDialogProps> = ({
       // Using Iconify Public API
       const response = await fetch(
         `https://api.iconify.design/search?query=${encodeURIComponent(
-          query
-        )}&limit=60`
+          query,
+        )}&limit=60`,
       );
       const data = await response.json();
       if (data.icons) {
@@ -68,10 +68,10 @@ const IconPickerDialog: React.FC<IconPickerDialogProps> = ({
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Handle initial load when dialog opens (optional as searchTerm default triggers effect)
+  // Handle initial load when dialog opens
   useEffect(() => {
-    if (open && icons.length === 0 && searchTerm === "school") {
-      searchIcons("school");
+    if (open && icons.length === 0 && searchTerm) {
+      searchIcons(searchTerm);
     }
   }, [open]);
 
@@ -98,7 +98,7 @@ const IconPickerDialog: React.FC<IconPickerDialogProps> = ({
           pb: 1,
         }}
       >
-        Select Icon (Iconify)
+        Select Icon
         <IconButton onClick={onClose} size="small">
           <CloseIcon />
         </IconButton>

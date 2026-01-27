@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -67,6 +67,42 @@ const AddMenusDialog: React.FC<AddMenusDialogProps> = ({
   const { data: menusData } = useGetMenus();
 
   const schools = schoolsData?.data || [];
+  const menus = menusData?.data || [];
+
+  // Get roles of the selected parent menu
+  const selectedParentRoles = useMemo(() => {
+    if (menuType !== "sub" || !formData.parentMenuId) return null;
+    const parent = menus.find((m: any) => m.menuId === formData.parentMenuId);
+    const roles = parent?.menuAccessRoles || [];
+    return Array.isArray(roles) ? roles : [roles];
+  }, [menuType, formData.parentMenuId, menus]);
+
+  // Automatically add roles from the parent menu and ensure they are present
+  useEffect(() => {
+    if (selectedParentRoles && selectedParentRoles.length > 0) {
+      setFormData((prev) => {
+        const currentRoles = Array.isArray(prev.menuAccessRoles)
+          ? prev.menuAccessRoles
+          : [prev.menuAccessRoles];
+
+        const rolesArray = Array.isArray(selectedParentRoles)
+          ? selectedParentRoles
+          : [selectedParentRoles];
+
+        const missingRoles = rolesArray.filter(
+          (role: string) => !currentRoles.includes(role),
+        );
+
+        if (missingRoles.length > 0) {
+          return {
+            ...prev,
+            menuAccessRoles: [...currentRoles, ...missingRoles],
+          };
+        }
+        return prev;
+      });
+    }
+  }, [selectedParentRoles]);
 
   // Filter for potential parent menus (Main Menus that are not submenus themselves)
   const parentMenuOptions =
@@ -422,27 +458,44 @@ const AddMenusDialog: React.FC<AddMenusDialogProps> = ({
                             const roleLabel = roles.find(
                               (r) => r.value === value,
                             )?.label;
+                            const isInherited =
+                              selectedParentRoles !== null &&
+                              selectedParentRoles.includes(value);
+
                             return (
                               <Chip
                                 key={value}
                                 label={roleLabel || value}
-                                onDelete={() => {
-                                  const currentRoles = Array.isArray(
-                                    formData.menuAccessRoles,
-                                  )
-                                    ? formData.menuAccessRoles
-                                    : [formData.menuAccessRoles];
-                                  const newRoles = currentRoles.filter(
-                                    (r) => r !== value,
-                                  );
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    menuAccessRoles: newRoles,
-                                  }));
-                                }}
+                                onDelete={
+                                  isInherited
+                                    ? undefined
+                                    : () => {
+                                        const currentRoles = Array.isArray(
+                                          formData.menuAccessRoles,
+                                        )
+                                          ? formData.menuAccessRoles
+                                          : [formData.menuAccessRoles];
+                                        const newRoles = currentRoles.filter(
+                                          (r) => r !== value,
+                                        );
+                                        setFormData((prev) => ({
+                                          ...prev,
+                                          menuAccessRoles: newRoles,
+                                        }));
+                                      }
+                                }
                                 onMouseDown={(event) => {
                                   event.stopPropagation();
                                 }}
+                                sx={{
+                                  bgcolor: isInherited
+                                    ? "rgba(59, 130, 246, 0.1)"
+                                    : undefined,
+                                  borderColor: isInherited
+                                    ? "rgba(59, 130, 246, 0.5)"
+                                    : undefined,
+                                }}
+                                variant={isInherited ? "outlined" : "filled"}
                               />
                             );
                           })}
@@ -456,12 +509,28 @@ const AddMenusDialog: React.FC<AddMenusDialogProps> = ({
                       )
                         ? formData.menuAccessRoles
                         : [formData.menuAccessRoles];
+
+                      // Role is inherited (mandatory) if it's already assigned to the parent
+                      const isInherited =
+                        selectedParentRoles !== null &&
+                        selectedParentRoles.includes(role.value);
+
                       return (
-                        <MenuItem key={role.value} value={role.value}>
+                        <MenuItem
+                          key={role.value}
+                          value={role.value}
+                          disabled={isInherited}
+                        >
                           <Checkbox
                             checked={selectedArray.indexOf(role.value) > -1}
+                            disabled={isInherited}
                           />
-                          <ListItemText primary={role.label} />
+                          <ListItemText
+                            primary={role.label}
+                            secondary={
+                              isInherited ? "Inherited from parent" : ""
+                            }
+                          />
                         </MenuItem>
                       );
                     })}

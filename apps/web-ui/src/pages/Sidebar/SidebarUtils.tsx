@@ -74,47 +74,75 @@ export const transformMenuData = (
       m.parentMenuId !== "",
   );
 
-  return mainMenus
-    .sort((a, b) => (a.menuOrder || 0) - (b.menuOrder || 0))
-    .map((menu: any) => {
-      // Find children where parentMenuId matches this menu's menuId OR internal mongo _id
-      const children = subMenus
-        .filter(
-          (sub) =>
-            sub.parentMenuId === menu.menuId ||
-            (menu._id && sub.parentMenuId === menu._id.toString()),
-        )
-        .sort((a, b) => (a.menuOrder || 0) - (b.menuOrder || 0));
+  // Helper to sort menu orders alphanumerically (e.g. SA1, SA2, SA10)
+  const sortMenuOrder = (a: any, b: any) => {
+    // Determine the relevant order string for the current role
+    let prefix = "M";
+    if (role) {
+      if (role === "super_admin") prefix = "SA";
+      else if (role === "sch_admin") prefix = "A";
+      else if (role === "teacher") prefix = "T";
+      else if (role === "student") prefix = "S";
+      else if (role === "parent") prefix = "P";
+    }
 
-      const hasChildren = children.length > 0;
+    const getOrder = (item: any) => {
+      const orders = Array.isArray(item.menuOrder)
+        ? item.menuOrder
+        : [item.menuOrder];
+      // Find order starting with prefix
+      return orders.find((o: any) => String(o).startsWith(prefix)) || "";
+    };
 
-      return {
-        name: menu.menuName,
-        icon: menu.menuIcon ? (
-          <DynamicIcon icon={menu.menuIcon} />
-        ) : (
-          <MuiIcons.Dashboard />
-        ),
-        // If it has children, it shouldn't have a direct path so it can expand
-        path: hasChildren
-          ? undefined
-          : `${basePath}${menu.menuUrl.startsWith("/") ? "" : "/"}${menu.menuUrl}`,
-        isExpandable: hasChildren,
-        subItems: hasChildren
-          ? children.map((sub: any) => ({
-              name: sub.menuName,
-              icon: sub.menuIcon ? (
-                <DynamicIcon icon={sub.menuIcon} />
-              ) : (
-                <MuiIcons.Circle sx={{ fontSize: "6px", color: "white" }} />
-              ),
-              path: `${basePath}${sub.menuUrl.startsWith("/") ? "" : "/"}${
-                sub.menuUrl
-              }`,
-            }))
-          : undefined,
-      };
+    const orderA = getOrder(a);
+    const orderB = getOrder(b);
+
+    // Natural sort order (handles SA1 vs SA10 correctly)
+    return orderA.localeCompare(orderB, undefined, {
+      numeric: true,
+      sensitivity: "base",
     });
+  };
+
+  return mainMenus.sort(sortMenuOrder).map((menu: any) => {
+    // Find children where parentMenuId matches this menu's menuId OR internal mongo _id
+    const children = subMenus
+      .filter(
+        (sub) =>
+          sub.parentMenuId === menu.menuId ||
+          (menu._id && sub.parentMenuId === menu._id.toString()),
+      )
+      .sort(sortMenuOrder);
+
+    const hasChildren = children.length > 0;
+
+    return {
+      name: menu.menuName,
+      icon: menu.menuIcon ? (
+        <DynamicIcon icon={menu.menuIcon} />
+      ) : (
+        <MuiIcons.Dashboard />
+      ),
+      // If it has children, it shouldn't have a direct path so it can expand
+      path: hasChildren
+        ? undefined
+        : `${basePath}${menu.menuUrl.startsWith("/") ? "" : "/"}${menu.menuUrl}`,
+      isExpandable: hasChildren,
+      subItems: hasChildren
+        ? children.map((sub: any) => ({
+            name: sub.menuName,
+            icon: sub.menuIcon ? (
+              <DynamicIcon icon={sub.menuIcon} />
+            ) : (
+              <MuiIcons.Circle sx={{ fontSize: "6px", color: "white" }} />
+            ),
+            path: `${basePath}${sub.menuUrl.startsWith("/") ? "" : "/"}${
+              sub.menuUrl
+            }`,
+          }))
+        : undefined,
+    };
+  });
 };
 
 // Super Admin Menu Items (Fallback)

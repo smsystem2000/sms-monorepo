@@ -45,10 +45,13 @@ const Menus = () => {
         return false;
       }
 
-      // Search filter (menuName, roles)
+      // Search filter (menuName, roles, menuOrder)
       const term = searchTerm.trim().toLowerCase();
       if (term) {
         const nameMatch = menu.menuName.toLowerCase().includes(term);
+        const orderMatch =
+          menu.menuOrder && String(menu.menuOrder).toLowerCase().includes(term);
+
         const roles = Array.isArray(menu.menuAccessRoles)
           ? menu.menuAccessRoles
           : [menu.menuAccessRoles];
@@ -56,7 +59,7 @@ const Menus = () => {
           (role: string) => role && role.toLowerCase().includes(term),
         );
 
-        if (!nameMatch && !roleMatch) {
+        if (!nameMatch && !roleMatch && !orderMatch) {
           return false;
         }
       }
@@ -107,6 +110,54 @@ const Menus = () => {
 
   const columns: Column<Menu>[] = [
     { id: "menuName", label: "Menu Name", minWidth: 150 },
+    {
+      id: "menuOrder",
+      label: "Order",
+      minWidth: 100,
+      format: (value: any) => {
+        if (!value) return null;
+        // Handle array or string
+        const orders = Array.isArray(value) ? value : [value];
+
+        return (
+          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+            {orders.map((orderItem: string) => {
+              const order = String(orderItem);
+              let color:
+                | "default"
+                | "primary"
+                | "secondary"
+                | "error"
+                | "info"
+                | "success"
+                | "warning" = "default";
+
+              // Derive color from prefix (SA -> Super Admin, A -> School Admin, etc.)
+              if (order.startsWith("SA"))
+                color = "error"; // super_admin
+              else if (order.startsWith("A"))
+                color = "primary"; // sch_admin
+              else if (order.startsWith("T"))
+                color = "warning"; // teacher
+              else if (order.startsWith("S"))
+                color = "success"; // student
+              else if (order.startsWith("P")) color = "warning"; // parent
+
+              return (
+                <Chip
+                  key={order}
+                  label={order}
+                  size="small"
+                  variant="outlined"
+                  color={color}
+                  sx={{ fontWeight: 600, minWidth: "50px" }}
+                />
+              );
+            })}
+          </Box>
+        );
+      },
+    },
     { id: "menuUrl", label: "Path", minWidth: 150 },
     {
       id: "menuType",

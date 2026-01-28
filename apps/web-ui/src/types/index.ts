@@ -710,7 +710,7 @@ export interface Menu {
   schoolId?: string;
   menuName: string;
   menuUrl: string;
-  menuOrder: number;
+  menuOrder: number | string | string[];
   menuIcon: string;
   menuAccessRoles: string | string[];
   menuType: "main" | "sub";
@@ -731,7 +731,7 @@ export interface CreateMenuPayload {
   menuType: string;
   hasSubmenu: boolean;
   parentMenuId?: string;
-  menuOrder: number;
+  menuOrder: string | number | string[];
   status: "active" | "inactive";
 }
 
@@ -748,15 +748,27 @@ export interface UpdateMenuPayload {
 // ==========================================
 // ANNOUNCEMENT TYPES
 // ==========================================
-export type AnnouncementCategory = 'general' | 'academic' | 'exam' | 'holiday' | 'event' | 'fee' | 'emergency';
-export type AnnouncementPriority = 'low' | 'normal' | 'high' | 'urgent';
-export type AnnouncementTargetAudience = 'all' | 'students' | 'teachers' | 'parents' | 'specific_class';
-export type AnnouncementStatus = 'active' | 'archived';
+export type AnnouncementCategory =
+  | "general"
+  | "academic"
+  | "exam"
+  | "holiday"
+  | "event"
+  | "fee"
+  | "emergency";
+export type AnnouncementPriority = "low" | "normal" | "high" | "urgent";
+export type AnnouncementTargetAudience =
+  | "all"
+  | "students"
+  | "teachers"
+  | "parents"
+  | "specific_class";
+export type AnnouncementStatus = "active" | "archived";
 
 export interface AnnouncementAttachment {
   url: string;
   fileName: string;
-  fileType: 'image' | 'pdf' | 'document';
+  fileType: "image" | "pdf" | "document";
   uploadedAt?: string;
 }
 
@@ -770,17 +782,17 @@ export interface Announcement {
   targetAudience: AnnouncementTargetAudience;
   targetClasses?: string[];
   attachments?: AnnouncementAttachment[];
-  attachmentUrl?: string;  // Backwards compatibility
+  attachmentUrl?: string; // Backwards compatibility
   publishDate: string;
   expiryDate?: string;
   isPublished: boolean;
   createdBy: string;
-  createdByRole: 'sch_admin' | 'teacher';
+  createdByRole: "sch_admin" | "teacher";
   createdByName?: string;
   status: AnnouncementStatus;
   seenBy?: { userId: string; userRole: string; seenAt: string }[];
   seenCount?: number;
-  isSeen?: boolean;  // Populated by API based on current user
+  isSeen?: boolean; // Populated by API based on current user
   createdAt?: string;
   updatedAt?: string;
 }
@@ -793,7 +805,7 @@ export interface CreateAnnouncementPayload {
   targetAudience?: AnnouncementTargetAudience;
   targetClasses?: string[];
   attachments?: AnnouncementAttachment[];
-  attachmentUrl?: string;  // Backwards compatibility
+  attachmentUrl?: string; // Backwards compatibility
   publishDate?: string;
   expiryDate?: string;
 }
@@ -815,7 +827,7 @@ export interface UpdateAnnouncementPayload {
 // ==========================================
 // HOMEWORK TYPES
 // ==========================================
-export type HomeworkStatus = 'active' | 'completed' | 'cancelled';
+export type HomeworkStatus = "active" | "completed" | "cancelled";
 
 export interface Homework {
   homeworkId: string;
@@ -861,22 +873,29 @@ export interface UpdateHomeworkPayload {
 // NOTIFICATION TYPES
 // ==========================================
 export type NotificationType =
-  | 'absence_alert'
-  | 'leave_status'
-  | 'announcement'
-  | 'homework_assigned'
-  | 'homework_due'
-  | 'exam_scheduled'
-  | 'result_published'
-  | 'general';
+  | "absence_alert"
+  | "leave_status"
+  | "announcement"
+  | "homework_assigned"
+  | "homework_due"
+  | "exam_scheduled"
+  | "result_published"
+  | "general";
 
-export type NotificationReferenceType = 'announcement' | 'homework' | 'leave' | 'attendance' | 'exam' | 'result' | null;
+export type NotificationReferenceType =
+  | "announcement"
+  | "homework"
+  | "leave"
+  | "attendance"
+  | "exam"
+  | "result"
+  | null;
 
 export interface Notification {
   notificationId: string;
   schoolId: string;
   userId: string;
-  userRole: 'student' | 'teacher' | 'parent' | 'sch_admin';
+  userRole: "student" | "teacher" | "parent" | "sch_admin";
   type: NotificationType;
   title: string;
   message: string;
@@ -960,4 +979,3 @@ export interface AbsentRecord {
   leaveApplied: boolean;
   leaveStatus?: LeaveStatus;
 }
-

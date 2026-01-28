@@ -54,10 +54,11 @@ const AddMenusDialog: React.FC<AddMenusDialogProps> = ({
     parentMenuId: "",
     menuType: "main",
     status: "active",
-    menuOrder: 0,
+    menuOrder: "", // string | number, initializing as empty string for auto-gen
   });
 
   const [menuType, setMenuType] = useState<"main" | "sub">("main");
+  const [activeOrderPrefix, setActiveOrderPrefix] = useState("SA"); // To manage which order prefix is currently being edited
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
 
@@ -123,7 +124,7 @@ const AddMenusDialog: React.FC<AddMenusDialogProps> = ({
         parentMenuId: menuToEdit.parentMenuId || "",
         menuType: menuToEdit.menuType || "main",
         status: menuToEdit.status || "active",
-        menuOrder: menuToEdit.menuOrder ?? 0,
+        menuOrder: menuToEdit.menuOrder ?? "",
       });
       setMenuType(menuToEdit.menuType || "main");
     }
@@ -153,8 +154,9 @@ const AddMenusDialog: React.FC<AddMenusDialogProps> = ({
 
     if (!formData.menuName.trim()) newErrors.menuName = "Menu name is required";
     if (!formData.menuUrl.trim()) newErrors.menuUrl = "Menu path is required";
-    if (formData.menuOrder === undefined || formData.menuOrder === null)
-      newErrors.menuOrder = "Order is required";
+    // menuOrder is now optional (auto-generated if empty)
+    // if (formData.menuOrder === undefined || formData.menuOrder === null)
+    //   newErrors.menuOrder = "Order is required";
     if (
       !formData.menuAccessRoles ||
       (Array.isArray(formData.menuAccessRoles) &&
@@ -207,7 +209,7 @@ const AddMenusDialog: React.FC<AddMenusDialogProps> = ({
       parentMenuId: "",
       menuType: "main",
       status: "active",
-      menuOrder: 0,
+      menuOrder: "",
     });
     setMenuType("main");
     setErrors({});
@@ -394,17 +396,126 @@ const AddMenusDialog: React.FC<AddMenusDialogProps> = ({
 
               {/* Menu Order */}
               <Grid size={{ xs: 12 }}>
-                <TextField
-                  name="menuOrder"
-                  label="Menu Order"
-                  type="number"
-                  value={formData.menuOrder}
-                  onChange={handleChange}
-                  error={!!errors.menuOrder}
-                  helperText={errors.menuOrder}
-                  required
-                  fullWidth
-                />
+                {/* Existing Codes Display */}
+                <Box
+                  sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", mb: 1 }}
+                >
+                  {(Array.isArray(formData.menuOrder)
+                    ? formData.menuOrder
+                    : [formData.menuOrder]
+                  )
+                    .filter(Boolean)
+                    .map((order) => {
+                      const o = String(order);
+                      let color:
+                        | "default"
+                        | "primary"
+                        | "secondary"
+                        | "error"
+                        | "info"
+                        | "success"
+                        | "warning" = "default";
+                      if (o.startsWith("SA")) color = "error";
+                      else if (o.startsWith("A")) color = "primary";
+                      else if (o.startsWith("T")) color = "warning";
+                      else if (o.startsWith("S")) color = "success";
+                      else if (o.startsWith("P")) color = "warning";
+
+                      return (
+                        <Chip
+                          key={o}
+                          label={o}
+                          size="small"
+                          color={color}
+                          variant="outlined"
+                          onDelete={
+                            menuToEdit
+                              ? () => {
+                                  setFormData((prev) => {
+                                    const currentOrders = (
+                                      Array.isArray(prev.menuOrder)
+                                        ? prev.menuOrder
+                                        : [prev.menuOrder]
+                                    )
+                                      .filter(Boolean)
+                                      .map(String);
+                                    return {
+                                      ...prev,
+                                      menuOrder: currentOrders.filter(
+                                        (item) => item !== o,
+                                      ),
+                                    };
+                                  });
+                                }
+                              : undefined
+                          }
+                        />
+                      );
+                    })}
+                </Box>
+
+                <Box sx={{ display: "flex", gap: 1 }}>
+                  <FormControl sx={{ minWidth: 100 }}>
+                    <InputLabel>Prefix</InputLabel>
+                    <Select
+                      label="Prefix"
+                      value={activeOrderPrefix}
+                      onChange={(e) => setActiveOrderPrefix(e.target.value)}
+                      disabled={!menuToEdit}
+                    >
+                      <MenuItem value="SA">SA (Super Admin)</MenuItem>
+                      <MenuItem value="A">A (School Admin)</MenuItem>
+                      <MenuItem value="T">T (Teacher)</MenuItem>
+                      <MenuItem value="S">S (Student)</MenuItem>
+                      <MenuItem value="P">P (Parent)</MenuItem>
+                    </Select>
+                  </FormControl>
+                  <TextField
+                    name="menuOrderNumber"
+                    label="Order No."
+                    value={(() => {
+                      const orders = Array.isArray(formData.menuOrder)
+                        ? formData.menuOrder
+                        : [formData.menuOrder];
+                      const match = orders.find((o) =>
+                        String(o).startsWith(activeOrderPrefix),
+                      );
+                      return match
+                        ? String(match).replace(activeOrderPrefix, "")
+                        : "";
+                    })()}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      const newCode = `${activeOrderPrefix}${newValue}`;
+
+                      setFormData((prev) => {
+                        const currentOrders = (
+                          Array.isArray(prev.menuOrder)
+                            ? prev.menuOrder
+                            : [prev.menuOrder]
+                        )
+                          .filter(Boolean)
+                          .map(String);
+                        // Remove any existing code with this prefix
+                        const filtered = currentOrders.filter(
+                          (o) => !o.startsWith(activeOrderPrefix),
+                        );
+                        // Add new code if value exists
+                        if (newValue) {
+                          filtered.push(newCode);
+                        }
+                        return {
+                          ...prev,
+                          menuOrder: filtered,
+                        };
+                      });
+                    }}
+                    error={!!errors.menuOrder}
+                    fullWidth
+                    disabled={!menuToEdit}
+                    placeholder={`No. for ${activeOrderPrefix}`}
+                  />
+                </Box>
               </Grid>
 
               {/* Menu Icon */}

@@ -16,7 +16,7 @@ const menuSchema = new mongoose.Schema(
       required: true,
     },
     menuOrder: {
-      type: String,
+      type: [String],
       required: true,
     },
     menuType: {

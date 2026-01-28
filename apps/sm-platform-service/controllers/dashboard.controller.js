@@ -4,7 +4,10 @@ const {
   MenuModel: Menu,
   AdminModel: adminModel,
 } = require("@sms/shared");
-const generateMenuId = require("../utils/generateMenuID");
+const {
+  generateMenuId,
+  generateMenuOrderCode,
+} = require("../utils/generateMenuID");
 
 // Get dashboard stats
 const getDashboardStats = async (req, res) => {
@@ -110,7 +113,6 @@ const createMenu = async (req, res) => {
     if (
       !menuName ||
       !menuUrl ||
-      menuOrder === undefined ||
       !menuType ||
       !Array.isArray(roles) ||
       roles.length === 0
@@ -118,7 +120,7 @@ const createMenu = async (req, res) => {
       return res.status(400).json({
         success: false,
         message:
-          "menuName, menuUrl, menuOrder, menuType, and menuAccessRoles are required",
+          "menuName, menuUrl, menuType, and menuAccessRoles are required",
       });
     }
 
@@ -146,13 +148,28 @@ const createMenu = async (req, res) => {
       });
     }
 
+    // Auto-generate menuOrder if not provided
+    let finalMenuOrder = menuOrder;
+    if (
+      finalMenuOrder === undefined ||
+      finalMenuOrder === "" ||
+      finalMenuOrder === null
+    ) {
+      // Pass ALL roles to generator to get an object { role: code }
+      finalMenuOrder = await generateMenuOrderCode(
+        roles,
+        schoolId,
+        effectiveParentMenuId,
+      );
+    }
+
     const menuId = await generateMenuId();
 
     const newMenu = new Menu({
       menuId,
       menuName,
       menuUrl,
-      menuOrder,
+      menuOrder: finalMenuOrder,
       menuType,
 
       parentMenuId: effectiveParentMenuId,
@@ -216,19 +233,71 @@ const updateMenu = async (req, res) => {
           : undefined;
 
     // Check for duplicate menu name in the same school and parent during update
+    // Fetch current menu to compare state - UNCONDITIONALLY
+    const currentMenu = await Menu.findOne({ menuId });
+    if (!currentMenu) {
+      return res.status(404).json({
+        success: false,
+        message: "Menu not found",
+      });
+    }
+
+    // Auto-update menuOrder if structural properties change and menuOrder is not provided
+    if (updateData.menuOrder === undefined) {
+      const newParentId =
+        effectiveParentMenuId !== undefined
+          ? effectiveParentMenuId
+          : currentMenu.parentMenuId;
+      const newSchoolId =
+        updateData.schoolId !== undefined
+          ? updateData.schoolId
+          : currentMenu.schoolId;
+
+      let newRole = null;
+      if (updateData.menuAccessRoles && updateData.menuAccessRoles.length > 0)
+        newRole = updateData.menuAccessRoles[0];
+      else if (
+        currentMenu.menuAccessRoles &&
+        currentMenu.menuAccessRoles.length > 0
+      )
+        newRole = currentMenu.menuAccessRoles[0];
+
+      // Detect changes
+      // Helper to normalize ID comparison (treat null, undefined, "" as equivalent for NO_ID)
+      const normalizeId = (id) => (id ? String(id) : "");
+
+      const parentChanged =
+        effectiveParentMenuId !== undefined &&
+        normalizeId(effectiveParentMenuId) !==
+          normalizeId(currentMenu.parentMenuId);
+
+      const schoolChanged =
+        updateData.schoolId !== undefined &&
+        normalizeId(updateData.schoolId) !== normalizeId(currentMenu.schoolId);
+
+      const currentRole = currentMenu.menuAccessRoles?.[0];
+      const roleChanged = newRole && currentRole && newRole !== currentRole;
+
+      if (parentChanged || schoolChanged || roleChanged) {
+        // Use all relevant roles for regeneration
+        const rolesToUse =
+          updateData.menuAccessRoles || currentMenu.menuAccessRoles;
+
+        updateData.menuOrder = await generateMenuOrderCode(
+          rolesToUse,
+          newSchoolId,
+          newParentId,
+        );
+      }
+    }
+
     if (
       updateData.menuName ||
       updateData.schoolId !== undefined ||
       effectiveParentMenuId !== undefined ||
       updateData.menuType !== undefined
     ) {
-      const currentMenu = await Menu.findOne({ menuId });
-      if (!currentMenu) {
-        return res.status(404).json({
-          success: false,
-          message: "Menu not found",
-        });
-      }
+      // currentMenu is already fetched
 
       const checkName = updateData.menuName || currentMenu.menuName;
       const checkSchoolId =
